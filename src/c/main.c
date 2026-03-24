@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include <ctype.h>
 
 #include "num2words-en.h"
 #include "config.h"
@@ -23,13 +24,29 @@ static void update_time() {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
+  // Time String
   static char s_time_buffer[8];
-  strftime(s_time_buffer, sizeof(s_time_buffer), clock_is_24h_style() ?
-                                                    "%H:%M" : "%I:%M", tick_time);
+  strftime(s_time_buffer, sizeof(s_time_buffer), (clock_is_24h_style() ?
+                                                  "%H:%M" : "%I:%M%p"), tick_time);
+  // 12-hour adjustments
+  if (!clock_is_24h_style()) {
+    // Remove leading zero on hour if needed
+    if (s_time_buffer[0] == '0') memmove(&s_time_buffer[0], &s_time_buffer[1], sizeof(s_time_buffer) - 1);
+    // Lowercase the am/p,
+    for(int i = 0; s_time_buffer[i]; i++){
+      s_time_buffer[i] = tolower(s_time_buffer[i]);
+    }
+  }
   text_layer_set_text(s_time_layer, s_time_buffer);
 
+  // Date String
   static char s_date_buffer[16];
-  strftime(s_date_buffer, sizeof(s_date_buffer), "%a %b %d", tick_time);
+  strftime(s_date_buffer, sizeof(s_date_buffer), "%a %m.%d", tick_time);
+  // Lowercase 1st char of day
+  s_date_buffer[0] += 32;
+  // If needed, replace leading '0' in month and day with ''
+  if (s_date_buffer[7] == '0') memmove(&s_date_buffer[6], &s_date_buffer[7], sizeof(s_date_buffer) - 7);
+  if (s_date_buffer[4] == '0') memmove(&s_date_buffer[4], &s_date_buffer[5], sizeof(s_date_buffer) - 5);
   text_layer_set_text(s_date_layer, s_date_buffer);
 }
 
