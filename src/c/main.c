@@ -20,6 +20,8 @@ static int s_battery_level;
 static BitmapLayer *s_bt_icon_layer;
 static GBitmap *s_bt_icon_bitmap;
 
+
+// Time update
 static void update_time() {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
@@ -50,10 +52,65 @@ static void update_time() {
   text_layer_set_text(s_date_layer, s_date_buffer);
 }
 
+
+// Update Steps
+static void update_steps() {
+   HealthMetric metric = HealthMetricStepCount;
+  time_t start = time_start_of_today();
+  time_t end = time(NULL);
+  
+  // Check the metric has data available for today
+  HealthServiceAccessibilityMask mask = health_service_metric_accessible(metric,
+    start, end);
+  
+  if(mask & HealthServiceAccessibilityMaskAvailable) {
+    // Data is available!
+    APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d",
+            (int)health_service_sum_today(metric));
+  } else {
+    // No data recorded yet today
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
+  }  
+}
+
+
+// Tick Handler
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
 }
 
+
+// Health Handler
+static void health_handler(HealthEventType event, void *context) {
+   // Which type of event occurred?
+  switch(event) {
+    case HealthEventSignificantUpdate:
+      APP_LOG(APP_LOG_LEVEL_INFO,
+              "New HealthService HealthEventSignificantUpdate event");
+      update_steps();    
+      break;
+    case HealthEventMovementUpdate:
+      APP_LOG(APP_LOG_LEVEL_INFO,
+              "New HealthService HealthEventMovementUpdate event");
+      update_steps();
+      break;
+    case HealthEventSleepUpdate:
+      APP_LOG(APP_LOG_LEVEL_INFO,
+              "New HealthService HealthEventSleepUpdate event");
+      break;
+    case HealthEventHeartRateUpdate:
+      APP_LOG(APP_LOG_LEVEL_INFO,
+              "New HealthService HealthEventHeartRateUpdate event");
+      break;
+    default:
+      APP_LOG(APP_LOG_LEVEL_INFO,
+              "New HealthService default event");
+      break;
+  }
+}
+
+
+// Battery change callback
 static void battery_callback(BatteryChargeState state) {
   // Record the new battery level
   s_battery_level = state.charge_percent;
@@ -62,6 +119,8 @@ static void battery_callback(BatteryChargeState state) {
   layer_mark_dirty(s_battery_layer);
 }
 
+
+// Battery layer update procedure
 static void battery_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
@@ -183,6 +242,16 @@ static void init() {
 
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  
+  // Register for health updates
+  #if defined(PBL_HEALTH)
+  // Attempt to subscribe
+  if(!health_service_events_subscribe(health_handler, NULL)) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Health not available!");
+  }
+  #else
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Health not available!");
+  #endif
 
   // Register for battery level updates
   battery_state_service_subscribe(battery_callback);
