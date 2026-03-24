@@ -27,8 +27,14 @@
                     "type": "font"
                 },
                 {
+                    "file": "fonts/Figtree-light.ttf",
+                    "name": "FONT_FIGTREE_LIGHT_16",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
                     "file": "fonts/Figtree-bold.ttf",
-                    "name": "FONT_FIGTREE_BOLD_42",
+                    "name": "FONT_FIGTREE_BOLD_36",
                     "targetPlatforms": null,
                     "type": "font"
                 },

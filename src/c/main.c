@@ -102,8 +102,8 @@ static void main_window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
 
   // Load custom fonts
-  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_42));
-  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_MEDIUM_24));
+  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_36));
+  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_16));
 
   // Center the time + date block vertically
   int date_height = 30;
