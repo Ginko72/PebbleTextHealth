@@ -30,7 +30,7 @@ static GBitmap *s_bt_icon_bitmap;
 
 // #define TESTING
 
-// Time update
+// Update Time
 static void update_time() {
 	// The current time text will be stored in the following 3 strings
 	static char s_textLine1[BUFFER_SIZE];
@@ -71,7 +71,7 @@ static void update_time() {
 
 // Update Steps
 static void update_steps() {
-   HealthMetric metric = HealthMetricStepCount;
+  HealthMetric metric = HealthMetricStepCount;
   time_t start = time_start_of_today();
   time_t end = time(NULL);
   
@@ -83,6 +83,8 @@ static void update_steps() {
     // Data is available!
     s_steps = (int)health_service_sum_today(metric);
     APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", s_steps);
+    // Update the meter
+    // layer_mark_dirty(s_steps_layer);
   } else {
     // No data recorded yet today
     APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
@@ -104,8 +106,6 @@ static void health_handler(HealthEventType event, void *context) {
       APP_LOG(APP_LOG_LEVEL_INFO,
               "New HealthService HealthEventSignificantUpdate event");
       update_steps(); 
-      // Update the meter
-      // layer_mark_dirty(s_steps_layer);
       break;
     case HealthEventMovementUpdate:
       APP_LOG(APP_LOG_LEVEL_INFO,
@@ -138,7 +138,7 @@ static void battery_callback(BatteryChargeState state) {
 }
 
 
-// Steps layer update procedure
+// Steps layer update procedure - FIXME: Update
 static void steps_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
@@ -165,7 +165,7 @@ static void steps_update_proc(Layer *layer, GContext *ctx) {
 }
 
 
-// Battery layer update procedure
+// Battery layer update procedure - FIXME: Probably eliminate and do battery with a text layer
 static void battery_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
@@ -214,7 +214,7 @@ static void main_window_load(Window *window) {
 
   // Place the time + date block vertically
   int bar_height   = 4;
-  int time_height  = 48;
+  int time_height  = 50;
   int time2_height = 30;
   int date_height  = 30;
   int block_height = 110;
@@ -222,7 +222,7 @@ static void main_window_load(Window *window) {
   int time_y  = block_y - (block_height / 2) - 10;
   int time2_y = time_y  + time_height;
   int time3_y = time2_y + time2_height;
-  int date_y  = block_y + (block_height / 2) + 2; 
+  int date_y  = block_y + (block_height / 2); 
 
   // Create the hour (line1) TextLayer
   s_time_layer = text_layer_create(
