@@ -21,20 +21,20 @@
                     "type": "bitmap"
                 },
                 {
-                    "file": "fonts/Figtree-light.ttf",
-                    "name": "FONT_FIGTREE_LIGHT_18",
+                    "file": "fonts/Amiko-bold.ttf",
+                    "name": "FONT_AMIKO_BOLD_42",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "fonts/Figtree-bold.ttf",
-                    "name": "FONT_FIGTREE_BOLD_48",
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_16",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "fonts/Figtree-medium.ttf",
-                    "name": "FONT_FIGTREE_MEDIUM_32",
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_28",
                     "targetPlatforms": null,
                     "type": "font"
                 }

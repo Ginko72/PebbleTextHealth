@@ -208,20 +208,21 @@ static void main_window_load(Window *window) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
-  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_48));
-  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_MEDIUM_32));
-  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_18));
+  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_42));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_28));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
 
   // Place the time + date block vertically
   int bar_height   = 4;
-  int time_height  = 52;
+  int time_height  = 48;
   int time2_height = 30;
   int date_height  = 30;
-  int block_height = 120;
-  int time_y  = (bounds.size.h / 2) - (block_height / 2) - 10;
-  int time2_y = (bounds.size.h / 2) - (block_height / 2) + time_height - 10;
-  int time3_y = (bounds.size.h / 2) - (block_height / 2) + time_height + time2_height - 10;
-  int date_y  = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12 - date_height;
+  int block_height = 110;
+  int block_y = (bounds.size.h / 2) - 8;
+  int time_y  = block_y - (block_height / 2) - 10;
+  int time2_y = time_y  + time_height;
+  int time3_y = time2_y + time2_height;
+  int date_y  = block_y + (block_height / 2) + 2; 
 
   // Create the hour (line1) TextLayer
   s_time_layer = text_layer_create(
@@ -255,7 +256,7 @@ static void main_window_load(Window *window) {
   text_layer_set_font(s_date_layer, s_date_font);
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
 
-  // Create battery meter Layer — visible bar near the top
+  // Create battery meter Layer — visible bar near the botton
   int bar_width = bounds.size.w * 2 / 3;
   int bar_x = (bounds.size.w - bar_width) / 2;
   int bar_y = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12;
@@ -276,7 +277,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(s_time2_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time3_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
-  layer_add_child(window_layer, s_battery_layer);
+  // layer_add_child(window_layer, s_battery_layer);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bt_icon_layer));
 
   // Show the correct state of the BT connection from the start
