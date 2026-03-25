@@ -42,7 +42,7 @@ static void update_time() {
   
   #ifdef TESTING
   tick_time->tm_hour = 12;
-  tick_time->tm_min = 17;
+  tick_time->tm_min = 27;
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
@@ -208,16 +208,16 @@ static void main_window_load(Window *window) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
-  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_42));
-  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_28));
+  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_46));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_24));
   s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
 
   // Place the time + date block vertically
   int bar_height   = 4;
-  int time_height  = 50;
-  int time2_height = 30;
+  int time_height  = 52;
+  int time2_height = 26;
   int date_height  = 30;
-  int block_height = 110;
+  int block_height = 105;
   int block_y = (bounds.size.h / 2) - 8;
   int time_y  = block_y - (block_height / 2) - 10;
   int time2_y = time_y  + time_height;
@@ -225,32 +225,28 @@ static void main_window_load(Window *window) {
   int date_y  = block_y + (block_height / 2); 
 
   // Create the hour (line1) TextLayer
-  s_time_layer = text_layer_create(
-      GRect(0, time_y, bounds.size.w, 60));
+  s_time_layer = text_layer_create(GRect(0, time_y, bounds.size.w, 60));
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_font(s_time_layer, s_time_font);
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
   // Create the miunte (line2) TextLayer
-  s_time2_layer = text_layer_create(
-      GRect(0, time2_y, bounds.size.w, 40));
+  s_time2_layer = text_layer_create(GRect(0, time2_y, bounds.size.w, 40));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
   text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
   
   // Create the minute (line3) TestLayer
-  s_time3_layer = text_layer_create(
-      GRect(0, time3_y, bounds.size.w, 40));
+  s_time3_layer = text_layer_create(GRect(0, time3_y, bounds.size.w, 40));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
   text_layer_set_text_alignment(s_time3_layer, GTextAlignmentCenter);
   
   // Create the date TextLayer — just above the bottom status bar
-  s_date_layer = text_layer_create(
-      GRect(0, date_y, bounds.size.w, 30));
+  s_date_layer = text_layer_create(GRect(0, date_y, bounds.size.w, 30));
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, s_date_font);
