@@ -46,7 +46,7 @@ static void update_time() {
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
-  # ifdef DEBUG
+  #ifdef TESTING
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line1: %s", s_textLine1);
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line2: %s", s_textLine2);
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line3: %s", s_textLine3);
@@ -284,10 +284,13 @@ static void main_window_load(Window *window) {
 static void main_window_unload(Window *window) {
   // Destroy TextLayers
   text_layer_destroy(s_time_layer);
+  text_layer_destroy(s_time2_layer);
+  text_layer_destroy(s_time3_layer);
   text_layer_destroy(s_date_layer);
 
   // Unload custom fonts
   fonts_unload_custom_font(s_time_font);
+  fonts_unload_custom_font(s_time2_font);
   fonts_unload_custom_font(s_date_font);
 
   // Destroy battery layer
