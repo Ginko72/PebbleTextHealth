@@ -42,11 +42,11 @@ static void update_time() {
   
   #ifdef TESTING
   tick_time->tm_hour = 12;
-  tick_time->tm_min = 33;
+  tick_time->tm_min = 17;
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
-  #ifdef TESTING
+  #if DEBUG
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line1: %s", s_textLine1);
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line2: %s", s_textLine2);
   APP_LOG(APP_LOG_LEVEL_INFO, "Time Line3: %s", s_textLine3);
@@ -170,7 +170,7 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
   // Find the width of the bar (inside the border)
-  int bar_width = ((s_battery_level * (bounds.size.w - 4)) / 100);
+  int bar_width = ((s_battery_level * (bounds.size.w - 2)) / 100);
 
   // Draw the border
   graphics_context_set_stroke_color(ctx, GColorWhite);
@@ -188,7 +188,7 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
 
   // Draw the filled bar inside the border
   graphics_context_set_fill_color(ctx, bar_color);
-  graphics_fill_rect(ctx, GRect(2, 2, bar_width, bounds.size.h - 4), 1, GCornerNone);
+  graphics_fill_rect(ctx, GRect(1, 1, bar_width, bounds.size.h - 2), 1, GCornerNone);
 }
 
 static void bluetooth_callback(bool connected) {
@@ -204,6 +204,8 @@ static void bluetooth_callback(bool connected) {
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
+  
+  APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
   s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_48));
@@ -211,7 +213,7 @@ static void main_window_load(Window *window) {
   s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_18));
 
   // Place the time + date block vertically
-  int bar_height   = 6;
+  int bar_height   = 4;
   int time_height  = 52;
   int time2_height = 30;
   int date_height  = 30;
