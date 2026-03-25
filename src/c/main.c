@@ -6,15 +6,23 @@
 
 static Window *s_main_window;
 static TextLayer *s_time_layer;
+static TextLayer *s_time2_layer;
+static TextLayer *s_time3_layer;
 static TextLayer *s_date_layer;
 
 // Custom fonts
 static GFont s_time_font;
+static GFont s_time2_font;
 static GFont s_date_font;
 
 // Battery
 static Layer *s_battery_layer;
 static int s_battery_level;
+
+// Steps
+static Layer *s_steps_layer;
+static int s_steps;
+
 
 // Bluetooth
 static BitmapLayer *s_bt_icon_layer;
@@ -75,8 +83,8 @@ static void update_steps() {
   
   if(mask & HealthServiceAccessibilityMaskAvailable) {
     // Data is available!
-    APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d",
-            (int)health_service_sum_today(metric));
+    s_steps = (int)health_service_sum_today(metric);
+    APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", s_steps);
   } else {
     // No data recorded yet today
     APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
@@ -97,7 +105,9 @@ static void health_handler(HealthEventType event, void *context) {
     case HealthEventSignificantUpdate:
       APP_LOG(APP_LOG_LEVEL_INFO,
               "New HealthService HealthEventSignificantUpdate event");
-      update_steps();    
+      update_steps(); 
+      // Update the meter
+      // layer_mark_dirty(s_steps_layer);
       break;
     case HealthEventMovementUpdate:
       APP_LOG(APP_LOG_LEVEL_INFO,
@@ -127,6 +137,33 @@ static void battery_callback(BatteryChargeState state) {
 
   // Update the meter
   layer_mark_dirty(s_battery_layer);
+}
+
+
+// Steps layer update procedure
+static void steps_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+
+  // Find the width of the bar (inside the border)
+  int bar_width = ((s_battery_level * (bounds.size.w - 4)) / 100);
+
+  // Draw the border
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_draw_round_rect(ctx, bounds, 2);
+
+  // Choose color based on battery level
+  GColor bar_color;
+  if (s_battery_level <= 20) {
+    bar_color = PBL_IF_COLOR_ELSE(GColorRed, GColorWhite);
+  } else if (s_battery_level <= 40) {
+    bar_color = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite);
+  } else {
+    bar_color = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite);
+  }
+
+  // Draw the filled bar inside the border
+  graphics_context_set_fill_color(ctx, bar_color);
+  graphics_fill_rect(ctx, GRect(2, 2, bar_width, bounds.size.h - 4), 1, GCornerNone);
 }
 
 
@@ -171,16 +208,22 @@ static void main_window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
 
   // Load custom fonts
-  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_36));
-  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_16));
+  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_36));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_MEDIUM_24));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_16));
 
   // Place the time + date block vertically
+  int bar_height = 8;
+  int time1_height = 60;
+  int time2_height = 30;
   int date_height = 30;
-  int block_height = 86;
-  int time_y = (bounds.size.h / 2) - (block_height / 2) - 10;
-  int date_y = bounds.size.h - 30;
+  int block_height = 110;
+  int time_y  = (bounds.size.h / 2) - (block_height / 2) - 10;
+  int time2_y = (bounds.size.h / 2) - (block_height / 2) + time1_height - 10;
+  int time3_y = (bounds.size.h / 2) - (block_height / 2) + time1_height + time2_height - 10;
+  int date_y  = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12 - date_height;
 
-  // Create the time TextLayer
+  // Create the hour (line1) TextLayer
   s_time_layer = text_layer_create(
       GRect(0, time_y, bounds.size.w, 60));
   text_layer_set_background_color(s_time_layer, GColorClear);
@@ -188,7 +231,23 @@ static void main_window_load(Window *window) {
   text_layer_set_font(s_time_layer, s_time_font);
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
-  // Create the date TextLayer — just below the time
+  // Create the miunte (line2) TextLayer
+  s_time2_layer = text_layer_create(
+      GRect(0, time2_y, bounds.size.w, 30));
+  text_layer_set_background_color(s_time2_layer, GColorClear);
+  text_layer_set_text_color(s_time2_layer, GColorWhite);
+  text_layer_set_font(s_time2_layer, s_time2_font);
+  text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
+  
+  // Create the minute (line3) TestLayer
+  s_time3_layer = text_layer_create(
+      GRect(0, time3_y, bounds.size.w, 30));
+  text_layer_set_background_color(s_time3_layer, GColorClear);
+  text_layer_set_text_color(s_time3_layer, GColorWhite);
+  text_layer_set_font(s_time3_layer, s_time2_font);
+  text_layer_set_text_alignment(s_time3_layer, GTextAlignmentCenter);
+  
+  // Create the date TextLayer — just above the bottom status bar
   s_date_layer = text_layer_create(
       GRect(0, date_y, bounds.size.w, 30));
   text_layer_set_background_color(s_date_layer, GColorClear);
@@ -199,15 +258,15 @@ static void main_window_load(Window *window) {
   // Create battery meter Layer — visible bar near the top
   int bar_width = bounds.size.w / 2;
   int bar_x = (bounds.size.w - bar_width) / 2;
-  int bar_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 28);
-  s_battery_layer = layer_create(GRect(bar_x, bar_y, bar_width, 8));
+  int bar_y = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12;
+  s_battery_layer = layer_create(GRect(bar_x, bar_y, bar_width, bar_height));
   layer_set_update_proc(s_battery_layer, battery_update_proc);
 
   // Create the Bluetooth icon GBitmap
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
   // Create the BitmapLayer to display the GBitmap — below the battery bar, centered
-  int bt_y = bar_y + 12;
+  int bt_y = bar_y + bar_height + 2;
   s_bt_icon_layer = bitmap_layer_create(GRect((bounds.size.w - 30) / 2, bt_y, 30, 30));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
