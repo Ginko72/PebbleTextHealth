@@ -28,36 +28,34 @@ static int s_steps;
 static BitmapLayer *s_bt_icon_layer;
 static GBitmap *s_bt_icon_bitmap;
 
+// #define TESTING
 
 // Time update
 static void update_time() {
 	// The current time text will be stored in the following 3 strings
-	char textLine1[BUFFER_SIZE];
-	char textLine2[BUFFER_SIZE];
-	char textLine3[BUFFER_SIZE];
+	static char s_textLine1[BUFFER_SIZE];
+	static char s_textLine2[BUFFER_SIZE];
+	static char s_textLine3[BUFFER_SIZE];
   
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
+  
+  #ifdef TESTING
+  tick_time->tm_hour = 12;
+  tick_time->tm_min = 33;
+  #endif
 
-  time_to_3words(tick_time->tm_hour, tick_time->tm_min, textLine1, textLine2, textLine3, BUFFER_SIZE);
-  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line1: %s", textLine1);
-  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line2: %s", textLine2);
-  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line3: %s", textLine3);
-        
+  time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
+  # ifdef DEBUG
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line1: %s", s_textLine1);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line2: %s", s_textLine2);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line3: %s", s_textLine3);
+  #endif
+  
   // Time String
-  static char s_time_buffer[8];
-  strftime(s_time_buffer, sizeof(s_time_buffer), (clock_is_24h_style() ?
-                                                  "%H:%M" : "%I:%M%p"), tick_time);
-  // 12-hour adjustments
-  if (!clock_is_24h_style()) {
-    // Remove leading zero on hour if needed
-    if (s_time_buffer[0] == '0') memmove(&s_time_buffer[0], &s_time_buffer[1], sizeof(s_time_buffer) - 1);
-    // Lowercase the am/p,
-    for(int i = 0; s_time_buffer[i]; i++){
-      s_time_buffer[i] = tolower(s_time_buffer[i]);
-    }
-  }
-  text_layer_set_text(s_time_layer, s_time_buffer);
+  text_layer_set_text(s_time_layer, s_textLine1);
+  text_layer_set_text(s_time2_layer, s_textLine2);
+  text_layer_set_text(s_time3_layer, s_textLine3);
 
   // Date String
   static char s_date_buffer[16];
@@ -208,19 +206,19 @@ static void main_window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
 
   // Load custom fonts
-  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_36));
-  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_MEDIUM_24));
-  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_16));
+  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_48));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_MEDIUM_32));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_18));
 
   // Place the time + date block vertically
-  int bar_height = 8;
-  int time1_height = 60;
+  int bar_height   = 6;
+  int time_height  = 52;
   int time2_height = 30;
-  int date_height = 30;
-  int block_height = 110;
+  int date_height  = 30;
+  int block_height = 120;
   int time_y  = (bounds.size.h / 2) - (block_height / 2) - 10;
-  int time2_y = (bounds.size.h / 2) - (block_height / 2) + time1_height - 10;
-  int time3_y = (bounds.size.h / 2) - (block_height / 2) + time1_height + time2_height - 10;
+  int time2_y = (bounds.size.h / 2) - (block_height / 2) + time_height - 10;
+  int time3_y = (bounds.size.h / 2) - (block_height / 2) + time_height + time2_height - 10;
   int date_y  = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12 - date_height;
 
   // Create the hour (line1) TextLayer
@@ -233,7 +231,7 @@ static void main_window_load(Window *window) {
 
   // Create the miunte (line2) TextLayer
   s_time2_layer = text_layer_create(
-      GRect(0, time2_y, bounds.size.w, 30));
+      GRect(0, time2_y, bounds.size.w, 40));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
@@ -241,7 +239,7 @@ static void main_window_load(Window *window) {
   
   // Create the minute (line3) TestLayer
   s_time3_layer = text_layer_create(
-      GRect(0, time3_y, bounds.size.w, 30));
+      GRect(0, time3_y, bounds.size.w, 40));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
@@ -256,7 +254,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
 
   // Create battery meter Layer — visible bar near the top
-  int bar_width = bounds.size.w / 2;
+  int bar_width = bounds.size.w * 2 / 3;
   int bar_x = (bounds.size.w - bar_width) / 2;
   int bar_y = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12;
   s_battery_layer = layer_create(GRect(bar_x, bar_y, bar_width, bar_height));
@@ -266,13 +264,15 @@ static void main_window_load(Window *window) {
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
   // Create the BitmapLayer to display the GBitmap — below the battery bar, centered
-  int bt_y = bar_y + bar_height + 2;
+  int bt_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) + bar_height + 10;
   s_bt_icon_layer = bitmap_layer_create(GRect((bounds.size.w - 30) / 2, bt_y, 30, 30));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
 
   // Add layers to the Window (order matters for z-ordering)
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_time2_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_time3_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
   layer_add_child(window_layer, s_battery_layer);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bt_icon_layer));

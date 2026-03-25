@@ -22,31 +22,19 @@
                 },
                 {
                     "file": "fonts/Figtree-light.ttf",
-                    "name": "FONT_FIGTREE_LIGHT_42",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/Figtree-light.ttf",
-                    "name": "FONT_FIGTREE_LIGHT_16",
+                    "name": "FONT_FIGTREE_LIGHT_18",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
                     "file": "fonts/Figtree-bold.ttf",
-                    "name": "FONT_FIGTREE_BOLD_36",
+                    "name": "FONT_FIGTREE_BOLD_48",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
                     "file": "fonts/Figtree-medium.ttf",
-                    "name": "FONT_FIGTREE_MEDIUM_34",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/Figtree-medium.ttf",
-                    "name": "FONT_FIGTREE_MEDIUM_24",
+                    "name": "FONT_FIGTREE_MEDIUM_32",
                     "targetPlatforms": null,
                     "type": "font"
                 }

@@ -30,7 +30,7 @@ static const char* const TEENS[] ={
   "fifteen",
   "sixteen",
   "seventeen",
-  "eightteen",
+  "eighteen",
   "nineteen"
 };
 
