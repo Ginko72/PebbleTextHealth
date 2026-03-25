@@ -52,7 +52,7 @@ static size_t append_number(char* words, int num, short oh) {
   int ones_val = num % 10;
 
   size_t len = 0;
-  
+
   if (tens_val == 1 && num != 10) {
     strcat(words, TEENS[ones_val]);
     return strlen(TEENS[ones_val]);
@@ -99,37 +99,39 @@ void time_to_words(int hours, int minutes, char* words, size_t length) {
 
 void time_to_3words(int hours, int minutes, char *line1, char *line2, char *line3, size_t length)
 {
-	char value[length];
-	time_to_words(hours, minutes, value, length);
-	
-	memset(line1, 0, length);
-	memset(line2, 0, length);
-	memset(line3, 0, length);
-	
-	char *start = value;
-	char *pch = strstr (start, " ");
-	while (pch != NULL) {
-		if (line1[0] == 0) {
-			memcpy(line1, start, pch-start);
-		}  else if (line2[0] == 0) {
-			memcpy(line2, start, pch-start);
-		} else if (line3[0] == 0) {
-			memcpy(line3, start, pch-start);
-		}
-		start += pch-start+1;
-		pch = strstr(start, " ");
-	}
-	
-	// Truncate long teen values
-        if (strstr(line2, "teen") != 0) {
-	  if (!((strstr(line2, "thir") != 0) ||
-                (strstr(line2, "fif") != 0) ||
-                (strstr(line2, "six") != 0))) {
-            char *pch = strstr(line2, "teen");
-            if (pch) {
-              memcpy(line3, pch, 4);
-              pch[0] = 0;
-            }
-          }       
-        }
+  char value[length];
+  time_to_words(hours, minutes, value, length);
+
+  memset(line1, 0, length);
+  memset(line2, 0, length);
+  memset(line3, 0, length);
+
+  char *start = value;
+  char *pch = strstr (start, " ");
+  while (pch != NULL) {
+    if (line1[0] == 0) {
+      memcpy(line1, start, pch-start);
+    }  else if (line2[0] == 0) {
+      memcpy(line2, start, pch-start);
+    } else if (line3[0] == 0) {
+      memcpy(line3, start, pch-start);
+    }
+    start += pch-start+1;
+    pch = strstr(start, " ");
+  }
+
+  // Truncate long teen values
+  #ifdef SPLIT_TEENS
+  if (strstr(line2, "teen") != 0) {
+    if (!((strstr(line2, "thir") != 0) ||
+          (strstr(line2, "fif") != 0) ||
+          (strstr(line2, "six") != 0))) {
+      char *pch = strstr(line2, "teen");
+      if (pch) {
+        memcpy(line3, pch, 4);
+        pch[0] = 0;
+      }
+    }       
+  }
+  #endif
 }

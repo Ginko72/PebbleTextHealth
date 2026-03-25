@@ -23,9 +23,19 @@ static GBitmap *s_bt_icon_bitmap;
 
 // Time update
 static void update_time() {
+	// The current time text will be stored in the following 3 strings
+	char textLine1[BUFFER_SIZE];
+	char textLine2[BUFFER_SIZE];
+	char textLine3[BUFFER_SIZE];
+  
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
+  time_to_3words(tick_time->tm_hour, tick_time->tm_min, textLine1, textLine2, textLine3, BUFFER_SIZE);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line1: %s", textLine1);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line2: %s", textLine2);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Time Line3: %s", textLine3);
+        
   // Time String
   static char s_time_buffer[8];
   strftime(s_time_buffer, sizeof(s_time_buffer), (clock_is_24h_style() ?
@@ -164,11 +174,11 @@ static void main_window_load(Window *window) {
   s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_BOLD_36));
   s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_FIGTREE_LIGHT_16));
 
-  // Center the time + date block vertically
+  // Place the time + date block vertically
   int date_height = 30;
-  int block_height = 56 + date_height;
+  int block_height = 86;
   int time_y = (bounds.size.h / 2) - (block_height / 2) - 10;
-  int date_y = time_y + 56;
+  int date_y = bounds.size.h - 30;
 
   // Create the time TextLayer
   s_time_layer = text_layer_create(

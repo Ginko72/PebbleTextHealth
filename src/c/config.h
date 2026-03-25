@@ -6,6 +6,10 @@
 #define DateFormatUS         true
 ////////////////////////////////////
 
+// General config
+#define DEBUG false
+#define BUFFER_SIZE 44
+
 // Time/Date Layout Parameters
 #define TextLineVOffset 0
 #define DateVOffset     123
