@@ -19,10 +19,20 @@ static GFont s_date_font;
 static Layer *s_battery_layer;
 static int s_battery_level;
 
-// Steps
-static Layer *s_steps_layer;
+// Steps and Second Tick Marks
+static Layer *s_tick_layer;
+static Layer *s_tick_mask_layer;
+static Layer *s_step_layer;
+static Layer *s_step_mask_layer;
+static int s_bezel_width;
+static int s_step_width;
+static int s_tick_width;
+static int s_step_layer_offset;
+static int s_tick_layer_offset;
+static int s_step_outer_rad;
+static int s_tick_outer_rad;
+static int s_tick_inner_rad;
 static int s_steps;
-
 
 // Bluetooth
 static BitmapLayer *s_bt_icon_layer;
@@ -41,8 +51,8 @@ static void update_time() {
   struct tm *tick_time = localtime(&temp);
   
   #ifdef TESTING
-  tick_time->tm_hour = 12;
-  tick_time->tm_min = 27;
+  tick_time->tm_hour = 8;
+  tick_time->tm_min = 28;
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
@@ -137,31 +147,49 @@ static void battery_callback(BatteryChargeState state) {
   layer_mark_dirty(s_battery_layer);
 }
 
-
-// Steps layer update procedure - FIXME: Update
-static void steps_update_proc(Layer *layer, GContext *ctx) {
+// Steps Mask Layer update proc
+static void step_mask_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
-  // Find the width of the bar (inside the border)
-  int bar_width = ((s_battery_level * (bounds.size.w - 4)) / 100);
+  // This is a mask, black the outer edge of the field...
+  int stroke_w = s_step_outer_rad;
+  int offset   = s_step_layer_offset - stroke_w/2;
+  int radius   = s_step_outer_rad + stroke_w/2;
+  graphics_context_set_stroke_color(ctx, GColorRed);
+  graphics_context_set_stroke_width(ctx, stroke_w);
+  graphics_draw_round_rect(ctx, GRect(offset, offset, 
+                                      bounds.size.w - 2*offset, 
+                                      bounds.size.h - 2*offset), radius);
+  
+  // Black the inner rounded rectangle...
+  int step_inner_offset = s_step_layer_offset + s_step_width;
+  graphics_context_set_fill_color(ctx, GColorBlue);
+  // graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w/2 - step_inner_offset);
+  graphics_fill_rect(ctx, GRect(step_inner_offset, step_inner_offset,
+                                bounds.size.w - 2*step_inner_offset,
+                                bounds.size.h - 2*step_inner_offset), s_tick_outer_rad, GCornersAll);
+  
 
-  // Draw the border
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_draw_round_rect(ctx, bounds, 2);
+}
 
-  // Choose color based on battery level
-  GColor bar_color;
-  if (s_battery_level <= 20) {
-    bar_color = PBL_IF_COLOR_ELSE(GColorRed, GColorWhite);
-  } else if (s_battery_level <= 40) {
-    bar_color = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite);
-  } else {
-    bar_color = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite);
-  }
 
-  // Draw the filled bar inside the border
-  graphics_context_set_fill_color(ctx, bar_color);
-  graphics_fill_rect(ctx, GRect(2, 2, bar_width, bounds.size.h - 4), 1, GCornerNone);
+// Steps Mask Layer update proc - FIXME: Update
+static void step_update_proc(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+
+  // This is a test, delete
+  int stroke_w = s_tick_outer_rad;
+  int offset   = s_tick_layer_offset - stroke_w/2;
+  int radius   = s_tick_outer_rad + stroke_w/2;
+  graphics_context_set_stroke_color(ctx, GColorGreen);
+  graphics_context_set_stroke_width(ctx, stroke_w);
+  graphics_draw_round_rect(ctx, GRect(offset, offset, 
+                                      bounds.size.w - 2*offset, 
+                                      bounds.size.h - 2*offset), radius);
+  
+  // graphics_context_set_fill_color(ctx, GColorBlue);
+  // graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w/2 - step_inner_offset);
+  
 }
 
 
@@ -204,7 +232,6 @@ static void bluetooth_callback(bool connected) {
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
-  
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
@@ -212,12 +239,10 @@ static void main_window_load(Window *window) {
   s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_24));
   s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
 
-  // Place the time + date block vertically
-  int bar_height   = 4;
-  int time_height  = 52;
+  // Compute the time block + date placement in y-axis
+  int time_height  = 55;
   int time2_height = 26;
-  int date_height  = 30;
-  int block_height = 105;
+  int block_height = 108;
   int block_y = (bounds.size.h / 2) - 8;
   int time_y  = block_y - (block_height / 2) - 10;
   int time2_y = time_y  + time_height;
@@ -252,7 +277,32 @@ static void main_window_load(Window *window) {
   text_layer_set_font(s_date_layer, s_date_font);
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
 
+  // Compute the tick and step sizes
+  s_bezel_width       = 0;
+  s_step_width        = 4;
+  s_tick_width        = 6;
+  s_step_layer_offset = s_bezel_width;
+  s_tick_layer_offset = s_step_layer_offset + s_tick_width;
+  s_step_outer_rad    = 30;
+  s_tick_outer_rad    = s_step_outer_rad - s_step_width;
+  s_tick_inner_rad    = s_tick_outer_rad - s_tick_width;
+  int step_x = s_bezel_width;
+  int step_y = s_bezel_width;
+  int step_w = bounds.size.w - 2 * s_bezel_width;
+  int step_h = bounds.size.h - 2 * s_bezel_width;
+  int tick_x = s_bezel_width + s_step_width;
+  int tick_y = s_bezel_width + s_step_width;
+  int tick_w = step_w - 2 * s_step_width;
+  int tick_h = step_h - 2 * s_step_width;
+  
+  // Create the step layers
+  s_step_mask_layer = layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+  layer_set_update_proc(s_step_mask_layer, step_mask_update_proc);
+  s_step_layer      = layer_create(GRect(step_x, step_y, step_w, step_h));
+  layer_set_update_proc(s_step_layer, step_update_proc);
+  
   // Create battery meter Layer — visible bar near the botton
+  int bar_height   = 4;
   int bar_width = bounds.size.w * 2 / 3;
   int bar_x = (bounds.size.w - bar_width) / 2;
   int bar_y = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12;
@@ -269,13 +319,16 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
 
   // Add layers to the Window (order matters for z-ordering)
+  layer_add_child(window_layer, s_step_layer);
+  layer_add_child(window_layer, s_step_mask_layer);
+  // tick_layer
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time2_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time3_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
   // layer_add_child(window_layer, s_battery_layer);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bt_icon_layer));
-
+  
   // Show the correct state of the BT connection from the start
   bluetooth_callback(connection_service_peek_pebble_app_connection());
 }
@@ -294,6 +347,8 @@ static void main_window_unload(Window *window) {
 
   // Destroy battery layer
   layer_destroy(s_battery_layer);
+  layer_destroy(s_tick_layer);
+  layer_destroy(s_tick_mask_layer);
 
   // Destroy Bluetooth elements
   gbitmap_destroy(s_bt_icon_bitmap);
