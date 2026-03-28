@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "num2words-en.h"
 #include "config.h"
@@ -94,7 +95,7 @@ static void update_steps() {
     s_steps = (int)health_service_sum_today(metric);
     APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", s_steps);
     // Update the meter
-    // layer_mark_dirty(s_steps_layer);
+    // layer_mark_dirty(s_step_layer);
   } else {
     // No data recorded yet today
     APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
@@ -155,7 +156,7 @@ static void step_mask_update_proc(Layer *layer, GContext *ctx) {
   int stroke_w = s_step_outer_rad;
   int offset   = s_step_layer_offset - stroke_w/2;
   int radius   = s_step_outer_rad + stroke_w/2;
-  graphics_context_set_stroke_color(ctx, GColorRed);
+  graphics_context_set_stroke_color(ctx, GColorBlack);
   graphics_context_set_stroke_width(ctx, stroke_w);
   graphics_draw_round_rect(ctx, GRect(offset, offset, 
                                       bounds.size.w - 2*offset, 
@@ -163,8 +164,7 @@ static void step_mask_update_proc(Layer *layer, GContext *ctx) {
   
   // Black the inner rounded rectangle...
   int step_inner_offset = s_step_layer_offset + s_step_width;
-  graphics_context_set_fill_color(ctx, GColorBlue);
-  // graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w/2 - step_inner_offset);
+  graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, GRect(step_inner_offset, step_inner_offset,
                                 bounds.size.w - 2*step_inner_offset,
                                 bounds.size.h - 2*step_inner_offset), s_tick_outer_rad, GCornersAll);
@@ -173,22 +173,19 @@ static void step_mask_update_proc(Layer *layer, GContext *ctx) {
 }
 
 
-// Steps Mask Layer update proc - FIXME: Update
+// Steps Layer update proc - FIXME: Update
 static void step_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
-  // This is a test, delete
-  int stroke_w = s_tick_outer_rad;
-  int offset   = s_tick_layer_offset - stroke_w/2;
-  int radius   = s_tick_outer_rad + stroke_w/2;
-  graphics_context_set_stroke_color(ctx, GColorGreen);
-  graphics_context_set_stroke_width(ctx, stroke_w);
-  graphics_draw_round_rect(ctx, GRect(offset, offset, 
-                                      bounds.size.w - 2*offset, 
-                                      bounds.size.h - 2*offset), radius);
-  
-  // graphics_context_set_fill_color(ctx, GColorBlue);
-  // graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w/2 - step_inner_offset);
+  GPoint cPoint = grect_center_point(&bounds);
+  int cx = cPoint.x;
+  int cy = cPoint.y;  
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_radial(ctx, GRect(cx - 1, 
+                                  cy - ((bounds.size.w + bounds.size.h)/2),
+                                  3, bounds.size.h + bounds.size.w), 
+                       GOvalScaleModeFillCircle, 150, 
+                       0, DEG_TO_TRIGANGLE(90+45));
   
 }
 
@@ -243,7 +240,7 @@ static void main_window_load(Window *window) {
   int time_height  = 55;
   int time2_height = 26;
   int block_height = 108;
-  int block_y = (bounds.size.h / 2) - 8;
+  int block_y = (bounds.size.h / 2) + 6;
   int time_y  = block_y - (block_height / 2) - 10;
   int time2_y = time_y  + time_height;
   int time3_y = time2_y + time2_height;
@@ -313,7 +310,7 @@ static void main_window_load(Window *window) {
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
   // Create the BitmapLayer to display the GBitmap — below the battery bar, centered
-  int bt_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) + bar_height + 10;
+  int bt_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) + bar_height + 24;
   s_bt_icon_layer = bitmap_layer_create(GRect((bounds.size.w - 30) / 2, bt_y, 30, 30));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
@@ -347,8 +344,8 @@ static void main_window_unload(Window *window) {
 
   // Destroy battery layer
   layer_destroy(s_battery_layer);
-  layer_destroy(s_tick_layer);
-  layer_destroy(s_tick_mask_layer);
+  layer_destroy(s_step_layer);
+  layer_destroy(s_step_mask_layer);
 
   // Destroy Bluetooth elements
   gbitmap_destroy(s_bt_icon_bitmap);
