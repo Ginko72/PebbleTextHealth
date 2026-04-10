@@ -27,6 +27,12 @@
                     "type": "font"
                 },
                 {
+                    "file": "fonts/Amiko-bold.ttf",
+                    "name": "FONT_AMIKO_BOLD_12",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_16",
                     "targetPlatforms": null,
@@ -35,6 +41,12 @@
                 {
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_24",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_18",
                     "targetPlatforms": null,
                     "type": "font"
                 }

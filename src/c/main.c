@@ -5,7 +5,9 @@
 #include "num2words-en.h"
 #include "config.h"
 
-static Window *s_main_window;
+static Window    *s_main_window;
+
+// Time display layers
 static TextLayer *s_time_layer;
 static TextLayer *s_time2_layer;
 static TextLayer *s_time3_layer;
@@ -15,25 +17,26 @@ static TextLayer *s_date_layer;
 static GFont s_time_font;
 static GFont s_time2_font;
 static GFont s_date_font;
+static GFont s_batt_font;
 
 // Battery
-static Layer *s_battery_layer;
-static int s_battery_level;
+static TextLayer *s_batt_layer;
+static int        s_batt_level;
 
 // Steps and Second Tick Marks
 static Layer *s_tick_layer;
 static Layer *s_tick_mask_layer;
 static Layer *s_step_layer;
 static Layer *s_step_mask_layer;
-static int s_bezel_width;
-static int s_step_width;
-static int s_tick_width;
-static int s_step_layer_offset;
-static int s_tick_layer_offset;
-static int s_step_outer_rad;
-static int s_tick_outer_rad;
-static int s_tick_inner_rad;
-static int s_steps;
+static int    s_bezel_width;
+static int    s_step_width;
+static int    s_tick_width;
+static int    s_step_layer_offset;
+static int    s_tick_layer_offset;
+static int    s_step_outer_rad;
+static int    s_tick_outer_rad;
+static int    s_tick_inner_rad;
+static int    s_steps;
 
 // Bluetooth
 static BitmapLayer *s_bt_icon_layer;
@@ -95,7 +98,7 @@ static void update_steps() {
     s_steps = (int)health_service_sum_today(metric);
     APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", s_steps);
     // Update the meter
-    // layer_mark_dirty(s_step_layer);
+    layer_mark_dirty(s_step_layer);
   } else {
     // No data recorded yet today
     APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
@@ -141,12 +144,16 @@ static void health_handler(HealthEventType event, void *context) {
 
 // Battery change callback
 static void battery_callback(BatteryChargeState state) {
+  static char s_textLine[BUFFER_SIZE];
+  
   // Record the new battery level
-  s_battery_level = state.charge_percent;
+  s_batt_level = state.charge_percent;
 
   // Update the meter
-  layer_mark_dirty(s_battery_layer);
+  snprintf(s_textLine, BUFFER_SIZE, "batt %d%%", s_batt_level);
+  text_layer_set_text(s_batt_layer, s_textLine);
 }
+
 
 // Steps Mask Layer update proc
 static void step_mask_update_proc(Layer *layer, GContext *ctx) {
@@ -173,48 +180,75 @@ static void step_mask_update_proc(Layer *layer, GContext *ctx) {
 }
 
 
-// Steps Layer update proc - FIXME: Update
+// Steps Layer update proc
 static void step_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
   GPoint cPoint = grect_center_point(&bounds);
   int cx = cPoint.x;
-  int cy = cPoint.y;  
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_fill_radial(ctx, GRect(cx - 1, 
-                                  cy - ((bounds.size.w + bounds.size.h)/2),
-                                  3, bounds.size.h + bounds.size.w), 
-                       GOvalScaleModeFillCircle, 150, 
-                       0, DEG_TO_TRIGANGLE(90+45));
+  int cy = cPoint.y;
   
+  int white_angl  = 0;
+  int green_angl  = 0;
+  int purple_angl = 0;
+  
+  // DEBUGGING
+  s_steps = 11000;
+  
+  // Compute angles
+  if (s_steps <= 10000) {
+    white_angl = trunc(s_steps * 360.0/10000.0);
+  } else if (s_steps <= 20000) {
+    white_angl = 360;
+    green_angl = trunc((s_steps-10000) * 360.0/10000.0);
+  } else if (s_steps <= 30000) {
+    green_angl = 360;
+    purple_angl = trunc((s_steps-20000) * 360.0/10000.0);
+  }
+  
+  // White ring (0-10k)
+  if (white_angl > 0) {
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_radial(ctx, GRect(cx - 1, 
+                                    cy - ((bounds.size.w + bounds.size.h)/2),
+                                    3, bounds.size.h + bounds.size.w), 
+                         GOvalScaleModeFillCircle, 150, 
+                         0, DEG_TO_TRIGANGLE(white_angl));
+  }
+  
+  // Green ring (10-20k)
+  if (green_angl > 0) {
+    graphics_context_set_fill_color(ctx, GColorGreen);
+    graphics_fill_radial(ctx, GRect(cx - 1, 
+                                    cy - ((bounds.size.w + bounds.size.h)/2),
+                                    3, bounds.size.h + bounds.size.w), 
+                         GOvalScaleModeFillCircle, 150, 
+                         0, DEG_TO_TRIGANGLE(green_angl));
+  }
+  
+  // Purple ring (10-20k)
+  if (purple_angl > 0) {
+    graphics_context_set_fill_color(ctx, GColorVividViolet);
+    graphics_fill_radial(ctx, GRect(cx - 1, 
+                                    cy - ((bounds.size.w + bounds.size.h)/2),
+                                    3, bounds.size.h + bounds.size.w), 
+                         GOvalScaleModeFillCircle, 150, 
+                         0, DEG_TO_TRIGANGLE(purple_angl));
+  }
 }
 
 
-// Battery layer update procedure - FIXME: Probably eliminate and do battery with a text layer
-static void battery_update_proc(Layer *layer, GContext *ctx) {
+// Tick Layer update proc
+static void tick_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
-  // Find the width of the bar (inside the border)
-  int bar_width = ((s_battery_level * (bounds.size.w - 2)) / 100);
+  GPoint cPoint = grect_center_point(&bounds);
+  int cx = cPoint.x;
+  int cy = cPoint.y;
 
-  // Draw the border
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_draw_round_rect(ctx, bounds, 2);
-
-  // Choose color based on battery level
-  GColor bar_color;
-  if (s_battery_level <= 20) {
-    bar_color = PBL_IF_COLOR_ELSE(GColorRed, GColorWhite);
-  } else if (s_battery_level <= 40) {
-    bar_color = PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite);
-  } else {
-    bar_color = PBL_IF_COLOR_ELSE(GColorGreen, GColorWhite);
-  }
-
-  // Draw the filled bar inside the border
-  graphics_context_set_fill_color(ctx, bar_color);
-  graphics_fill_rect(ctx, GRect(1, 1, bar_width, bounds.size.h - 2), 1, GCornerNone);
 }
+  
+
 
 static void bluetooth_callback(bool connected) {
   // Show icon if disconnected
@@ -226,6 +260,7 @@ static void bluetooth_callback(bool connected) {
   }
 }
 
+
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -234,17 +269,18 @@ static void main_window_load(Window *window) {
   // Load custom fonts
   s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_46));
   s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_24));
-  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_18));
+  s_batt_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
 
   // Compute the time block + date placement in y-axis
   int time_height  = 55;
   int time2_height = 26;
   int block_height = 108;
-  int block_y = (bounds.size.h / 2) + 6;
+  int block_y = (bounds.size.h / 2) + 4;
   int time_y  = block_y - (block_height / 2) - 10;
   int time2_y = time_y  + time_height;
   int time3_y = time2_y + time2_height;
-  int date_y  = block_y + (block_height / 2); 
+  int date_y  = block_y + (block_height / 2) + 6; 
 
   // Create the hour (line1) TextLayer
   s_time_layer = text_layer_create(GRect(0, time_y, bounds.size.w, 60));
@@ -298,19 +334,24 @@ static void main_window_load(Window *window) {
   s_step_layer      = layer_create(GRect(step_x, step_y, step_w, step_h));
   layer_set_update_proc(s_step_layer, step_update_proc);
   
-  // Create battery meter Layer — visible bar near the botton
-  int bar_height   = 4;
-  int bar_width = bounds.size.w * 2 / 3;
-  int bar_x = (bounds.size.w - bar_width) / 2;
-  int bar_y = bounds.size.h - PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) - 12;
-  s_battery_layer = layer_create(GRect(bar_x, bar_y, bar_width, bar_height));
-  layer_set_update_proc(s_battery_layer, battery_update_proc);
+  // Create the tick layer
+  s_tick_layer = layer_create(GRect(tick_x, tick_y, tick_w, tick_h));
+  layer_set_update_proc(s_tick_layer, tick_update_proc);
+  
+  // Create battery level Layer
+  int batt_height = 40;
+  int batt_y = 16;
+  s_batt_layer = text_layer_create(GRect(0, batt_y, bounds.size.w, batt_height));
+  text_layer_set_background_color(s_batt_layer, GColorClear);
+  text_layer_set_text_color(s_batt_layer, GColorWhite);
+  text_layer_set_font(s_batt_layer, s_batt_font);
+  text_layer_set_text_alignment(s_batt_layer, GTextAlignmentCenter);
 
   // Create the Bluetooth icon GBitmap
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
-  // Create the BitmapLayer to display the GBitmap — below the battery bar, centered
-  int bt_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) + bar_height + 24;
+  // Create the BitmapLayer to display the GBitmap — centered at the top
+  int bt_y = PBL_IF_ROUND_ELSE(bounds.size.h / 8, bounds.size.h / 32) + 32;
   s_bt_icon_layer = bitmap_layer_create(GRect((bounds.size.w - 30) / 2, bt_y, 30, 30));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
@@ -318,12 +359,12 @@ static void main_window_load(Window *window) {
   // Add layers to the Window (order matters for z-ordering)
   layer_add_child(window_layer, s_step_layer);
   layer_add_child(window_layer, s_step_mask_layer);
-  // tick_layer
+  layer_add_child(window_layer, s_tick_layer);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time2_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time3_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
-  // layer_add_child(window_layer, s_battery_layer);
+  layer_add_child(window_layer, text_layer_get_layer(s_batt_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bt_icon_layer));
   
   // Show the correct state of the BT connection from the start
@@ -336,14 +377,14 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_time2_layer);
   text_layer_destroy(s_time3_layer);
   text_layer_destroy(s_date_layer);
-
+  text_layer_destroy(s_batt_layer);
+  
   // Unload custom fonts
   fonts_unload_custom_font(s_time_font);
   fonts_unload_custom_font(s_time2_font);
   fonts_unload_custom_font(s_date_font);
 
-  // Destroy battery layer
-  layer_destroy(s_battery_layer);
+  // Destroy step layer
   layer_destroy(s_step_layer);
   layer_destroy(s_step_mask_layer);
 
