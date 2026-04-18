@@ -56,7 +56,7 @@ static void update_time() {
   
   #ifdef TESTING
   tick_time->tm_hour = 8;
-  tick_time->tm_min = 28;
+  tick_time->tm_min = 17;
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
@@ -150,7 +150,7 @@ static void battery_callback(BatteryChargeState state) {
   s_batt_level = state.charge_percent;
 
   // Update the meter
-  snprintf(s_textLine, BUFFER_SIZE, "batt %d%%", s_batt_level);
+  snprintf(s_textLine, BUFFER_SIZE, "%d%%", s_batt_level);
   text_layer_set_text(s_batt_layer, s_textLine);
 }
 
@@ -192,8 +192,9 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   int green_angl  = 0;
   int purple_angl = 0;
   
-  // DEBUGGING
+  #ifdef TESTING
   s_steps = 11000;
+  #endif
   
   // Compute angles
   if (s_steps <= 10000) {
@@ -243,8 +244,8 @@ static void tick_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
   GPoint cPoint = grect_center_point(&bounds);
-  int cx = cPoint.x;
-  int cy = cPoint.y;
+  // int cx = cPoint.x;
+  // int cy = cPoint.y;
 
 }
   
@@ -267,20 +268,25 @@ static void main_window_load(Window *window) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
-  s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_46));
+  int time_height  = 55;
+  if (bounds.size.w >= 200) {
+    s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_46));
+  } else {
+    s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_38));
+    time_height  = 44;
+  }
   s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_24));
   s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_18));
   s_batt_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
 
   // Compute the time block + date placement in y-axis
-  int time_height  = 55;
   int time2_height = 26;
-  int block_height = 108;
-  int block_y = (bounds.size.h / 2) + 4;
-  int time_y  = block_y - (block_height / 2) - 10;
+  int block_height = 110;
+  int block_y = (bounds.size.h / 2);
+  int time_y  = block_y - (block_height / 2);
   int time2_y = time_y  + time_height;
   int time3_y = time2_y + time2_height;
-  int date_y  = block_y + (block_height / 2) + 6; 
+  int date_y  = bounds.size.h - 32; // block_y + (block_height / 2) + 6; 
 
   // Create the hour (line1) TextLayer
   s_time_layer = text_layer_create(GRect(0, time_y, bounds.size.w, 60));
@@ -340,7 +346,7 @@ static void main_window_load(Window *window) {
   
   // Create battery level Layer
   int batt_height = 40;
-  int batt_y = 16;
+  int batt_y = 10;
   s_batt_layer = text_layer_create(GRect(0, batt_y, bounds.size.w, batt_height));
   text_layer_set_background_color(s_batt_layer, GColorClear);
   text_layer_set_text_color(s_batt_layer, GColorWhite);

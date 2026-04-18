@@ -9,7 +9,7 @@
         "capabilities": [
             "health"
         ],
-        "displayName": "Simple Text Oh One with Steps",
+        "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
         "messageKeys": [],
         "projectType": "native",
@@ -29,6 +29,12 @@
                 {
                     "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_12",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "fonts/Amiko-bold.ttf",
+                    "name": "FONT_AMIKO_BOLD_38",
                     "targetPlatforms": null,
                     "type": "font"
                 },
@@ -54,9 +60,8 @@
         },
         "sdkVersion": "3",
         "targetPlatforms": [
-            "emery",
-            "gabbro",
-            "flint"
+            "basalt",
+            "emery"
         ],
         "uuid": "F12F8A05-DCAD-4650-A646-2319AD1342B3",
         "watchapp": {
