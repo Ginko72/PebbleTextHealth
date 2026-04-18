@@ -25,7 +25,6 @@ static int        s_batt_level;
 
 // Steps and Second Tick Marks
 static Layer *s_tick_layer;
-static Layer *s_tick_mask_layer;
 static Layer *s_step_layer;
 static Layer *s_step_mask_layer;
 static int    s_bezel_width;
@@ -241,9 +240,9 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
 
 // Tick Layer update proc
 static void tick_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
+  // GRect bounds = layer_get_bounds(layer);
 
-  GPoint cPoint = grect_center_point(&bounds);
+  // GPoint cPoint = grect_center_point(&bounds);
   // int cx = cPoint.x;
   // int cy = cPoint.y;
 
@@ -268,9 +267,10 @@ static void main_window_load(Window *window) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
   // Load custom fonts
-  int time_height  = 55;
+  int time_height = 0;
   if (bounds.size.w >= 200) {
     s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_46));
+    time_height  = 55;
   } else {
     s_time_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_BOLD_38));
     time_height  = 44;
@@ -393,6 +393,7 @@ static void main_window_unload(Window *window) {
   // Destroy step layer
   layer_destroy(s_step_layer);
   layer_destroy(s_step_mask_layer);
+  layer_destroy(s_tick_layer);
 
   // Destroy Bluetooth elements
   gbitmap_destroy(s_bt_icon_bitmap);
