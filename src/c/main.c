@@ -389,6 +389,7 @@ static void main_window_unload(Window *window) {
   fonts_unload_custom_font(s_time_font);
   fonts_unload_custom_font(s_time2_font);
   fonts_unload_custom_font(s_date_font);
+  fonts_unload_custom_font(s_batt_font);
 
   // Destroy step layer
   layer_destroy(s_step_layer);
@@ -436,6 +437,12 @@ static void init() {
 }
 
 static void deinit() {
+  // Unsubscribe from services
+  tick_timer_service_unsubscribe();
+  health_service_events_unsubscribe();
+  battery_state_service_unsubscribe();
+  connection_service_unsubscribe();
+  
   window_destroy(s_main_window);
 }
 
