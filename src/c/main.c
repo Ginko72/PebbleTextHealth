@@ -250,12 +250,19 @@ static void bluetooth_callback(bool connected) {
 
 
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
-  bool wide              = bounds.size.w >= 200;
-  cfg->time_font_id      = wide ? RESOURCE_ID_FONT_AMIKO_BOLD_46 : RESOURCE_ID_FONT_AMIKO_BOLD_38;
-  cfg->time_height       = wide ? 55 : 44;
+  if (bounds.size.w >= 200) {
+    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+    cfg->time_height  = 55;
+  } else if (bounds.size.w >= 180) {
+    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_43;
+    cfg->time_height  = 51;
+  } else {
+    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+    cfg->time_height  = 44;
+  }
   cfg->time2_height      = 26;
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
-  cfg->corner_inset      = PBL_IF_ROUND_ELSE(20, 0);
+  cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w / 9, 0);
   cfg->step_width        = 4;
   cfg->step_outer_rad    = 30;
   cfg->tick_width        = 6;
