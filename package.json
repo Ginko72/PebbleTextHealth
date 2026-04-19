@@ -28,12 +28,6 @@
                 },
                 {
                     "file": "fonts/Amiko-bold.ttf",
-                    "name": "FONT_AMIKO_BOLD_12",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_38",
                     "targetPlatforms": null,
                     "type": "font"
@@ -60,7 +54,10 @@
         },
         "sdkVersion": "3",
         "targetPlatforms": [
+            "aplite",
             "basalt",
+            "chalk",
+            "diorite",
             "emery"
         ],
         "uuid": "69341e12-a9c6-4663-bcb9-da5d47485b6f",

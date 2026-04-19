@@ -5,8 +5,6 @@
 #define true 1
 #define false 0
 
-// Options
-#define DEBUG false
 
 static const char* const ONES[] = {
   "o'clock",
