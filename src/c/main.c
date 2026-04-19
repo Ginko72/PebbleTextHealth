@@ -41,8 +41,6 @@ static int    s_steps;
 static BitmapLayer *s_bt_icon_layer;
 static GBitmap *s_bt_icon_bitmap;
 
-// #define TESTING
-
 // Update Time
 static void update_time() {
 	// The current time text will be stored in the following 3 strings
@@ -53,9 +51,9 @@ static void update_time() {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
   
-  #ifdef TESTING
-  tick_time->tm_hour = 8;
-  tick_time->tm_min = 17;
+  #ifdef TESTING_TIME
+  tick_time->tm_hour = TESTING_H;
+  tick_time->tm_min = TESTING_M;
   #endif
 
   time_to_3words(tick_time->tm_hour, tick_time->tm_min, s_textLine1, s_textLine2, s_textLine3, BUFFER_SIZE);
@@ -191,8 +189,8 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   int green_angl  = 0;
   int purple_angl = 0;
   
-  #ifdef TESTING
-  s_steps = 11000;
+  #ifdef TESTING_STEPS
+  s_steps = TESTING_STEPS;
   #endif
   
   // Compute angles
