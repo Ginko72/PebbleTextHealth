@@ -74,7 +74,7 @@ static void update_time() {
   static char s_date_buffer[16];
   strftime(s_date_buffer, sizeof(s_date_buffer), "%a %m.%d", tick_time);
   // Lowercase 1st char of day
-  s_date_buffer[0] += 32;
+  s_date_buffer[0] = tolower((unsigned char)s_date_buffer[0]);
   // If needed, replace leading '0' in month and day with ''
   if (s_date_buffer[7] == '0') memmove(&s_date_buffer[6], &s_date_buffer[7], sizeof(s_date_buffer) - 7);
   if (s_date_buffer[4] == '0') memmove(&s_date_buffer[4], &s_date_buffer[5], sizeof(s_date_buffer) - 5);
@@ -100,7 +100,7 @@ static void update_steps() {
     layer_mark_dirty(s_step_layer);
   } else {
     // No data recorded yet today
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
+    APP_LOG(APP_LOG_LEVEL_INFO, "Data unavailable!");
   }  
 }
 
