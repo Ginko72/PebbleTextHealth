@@ -29,4 +29,9 @@ typedef struct {
   int      tick_outer_rad;     // Tick ring outer corner radius (px)
   int      tick_layer_offset;  // Tick layer inset from screen edge (px)
   int      tick_inner_rad;     // Tick ring inner corner radius (px)
+  int      batt_y;             // Battery text layer top y (px)
+  int      batt_height;        // Battery text layer height (px)
+  int      bt_gap;             // Gap between battery bottom and BT icon top (px)
+  int      date_bottom_offset; // Distance from screen bottom to date layer top (px)
+  int      bt_replaces_batt;   // 1 on small screens: BT icon replaces battery layer
 } LayoutConfig;
