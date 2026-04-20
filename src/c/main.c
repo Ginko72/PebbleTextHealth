@@ -42,15 +42,35 @@ static int    s_steps;
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   if (bounds.size.w >= 200) {
     cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-    cfg->time_height  = 55;
+    cfg->time_height  = 54;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_40;
+    cfg->time2_height  = 42;
+    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->date_height   = 22;
+    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->batt_height   = 22;
+    cfg->block_y       = bounds.size.h / 2 - 10; 
   } else if (bounds.size.w >= 180) {
-    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_43;
-    cfg->time_height  = 51;
+    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+    cfg->time_height  = 54;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_40;
+    cfg->time2_height  = 42;
+    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->date_height   = 22;
+    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->batt_height   = 22;
+    cfg->block_y       = bounds.size.h / 2 - 8;
   } else {
     cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height  = 44;
+    cfg->time_height  = 40;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
+    cfg->time2_height  = 34;
+    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+    cfg->date_height   = 16;
+    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+    cfg->batt_height   = 16;
+    cfg->block_y       = bounds.size.h / 2 - 6; 
   }
-  cfg->time2_height      = 26;
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
   cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w / 9, 0);
   cfg->step_width        = 4;
@@ -60,11 +80,11 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->tick_outer_rad    = cfg->step_outer_rad - cfg->step_width;
   cfg->tick_layer_offset = cfg->step_layer_offset + cfg->step_width;
   cfg->tick_inner_rad    = cfg->tick_outer_rad - cfg->tick_width;
-  cfg->batt_y             = 10;
-  cfg->batt_height        = 20;
+  cfg->batt_y             = 8;
   cfg->bt_gap             = 3;
-  cfg->date_bottom_offset = 32;
-  cfg->bt_replaces_batt   = (bounds.size.w < 200);
+  cfg->date_bottom_offset = 8 + cfg->date_height;
+  cfg->date_y             = bounds.size.h - cfg->date_bottom_offset;
+  cfg->bt_replaces_batt   = true;
 }
 
 
@@ -98,8 +118,8 @@ static void update_time() {
   strftime(s_date_buffer, sizeof(s_date_buffer), DateFormat, tick_time);
   // Lowercase 1st char of day
   s_date_buffer[0] = tolower((unsigned char)s_date_buffer[0]);
-  // If needed, replace leading '0' in month and day with ''
-  if (s_date_buffer[7] == '0') memmove(&s_date_buffer[6], &s_date_buffer[7], sizeof(s_date_buffer) - 7);
+  // Remove leading zeros. Process index 7 first to preserve index 4.
+  if (s_date_buffer[7] == '0') memmove(&s_date_buffer[7], &s_date_buffer[8], sizeof(s_date_buffer) - 8);
   if (s_date_buffer[4] == '0') memmove(&s_date_buffer[4], &s_date_buffer[5], sizeof(s_date_buffer) - 5);
   text_layer_set_text(s_date_layer, s_date_buffer);
 }
@@ -286,18 +306,16 @@ static void main_window_load(Window *window) {
 
   // Load custom fonts
   s_time_font  = fonts_load_custom_font(resource_get_handle(s_layout.time_font_id));
-  s_time2_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_24));
-  s_date_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_18));
-  s_batt_font  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_AMIKO_REGULAR_16));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(s_layout.time2_font_id));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(s_layout.date_font_id));
+  s_batt_font  = fonts_load_custom_font(resource_get_handle(s_layout.batt_font_id));
 
   // Time block placement
   int ci      = s_layout.corner_inset;
   int tw      = bounds.size.w - 2 * ci;
-  int block_y = bounds.size.h / 2;
-  int time_y  = block_y - s_layout.block_height / 2;
+  int time_y  = s_layout.block_y - s_layout.block_height / 2;
   int time2_y = time_y  + s_layout.time_height;
   int time3_y = time2_y + s_layout.time2_height;
-  int date_y  = bounds.size.h - s_layout.date_bottom_offset;
 
   // Create the hour (line 1) TextLayer
   s_time_layer = text_layer_create(GRect(ci, time_y, tw, 60));
@@ -307,21 +325,21 @@ static void main_window_load(Window *window) {
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
   // Create the minute (line 2) TextLayer
-  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, 40));
+  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, 50));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
   text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
 
   // Create the minute (line 3) TextLayer
-  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, 40));
+  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, 50));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
   text_layer_set_text_alignment(s_time3_layer, GTextAlignmentCenter);
 
   // Create the date TextLayer — just above the bottom status bar
-  s_date_layer = text_layer_create(GRect(ci, date_y, tw, 30));
+  s_date_layer = text_layer_create(GRect(ci, s_layout.date_y, tw, s_layout.date_height));
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, s_date_font);
@@ -448,6 +466,7 @@ static void init() {
 
 // De-initialize the app, destroying the main Window and unsubscribing from services
 static void deinit() {
+  animation_unschedule_all();
   tick_timer_service_unsubscribe();
   #if defined(PBL_HEALTH)
   health_service_events_unsubscribe();
@@ -464,4 +483,5 @@ int main(void) {
   init();
   app_event_loop();
   deinit();
+  return 0;
 }

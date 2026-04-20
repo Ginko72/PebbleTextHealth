@@ -22,37 +22,37 @@
                 },
                 {
                     "file": "fonts/Amiko-bold.ttf",
+                    "name": "FONT_AMIKO_BOLD_46",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_38",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "fonts/Amiko-bold.ttf",
-                    "name": "FONT_AMIKO_BOLD_43",
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_40",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "fonts/Amiko-bold.ttf",
-                    "name": "FONT_AMIKO_BOLD_46",
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_32",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_22",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_16",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/Amiko-regular.ttf",
-                    "name": "FONT_AMIKO_REGULAR_24",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/Amiko-regular.ttf",
-                    "name": "FONT_AMIKO_REGULAR_18",
                     "targetPlatforms": null,
                     "type": "font"
                 }
