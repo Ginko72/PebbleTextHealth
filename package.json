@@ -21,36 +21,42 @@
                     "type": "bitmap"
                 },
                 {
+                    "characterRegex": "[a-z]",
                     "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_46",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
+                    "characterRegex": "[a-z]",
                     "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_38",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
-                    "file": "fonts/Amiko-regular.ttf",
-                    "name": "FONT_AMIKO_REGULAR_40",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
+                    "characterRegex": "[a-z']",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_32",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
+                    "characterRegex": "[a-z']",
+                    "file": "fonts/Amiko-regular.ttf",
+                    "name": "FONT_AMIKO_REGULAR_24",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "characterRegex": "[a-z 0-9.%]",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_22",
                     "targetPlatforms": null,
                     "type": "font"
                 },
                 {
+                    "characterRegex": "[a-z 0-9.%]",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_16",
                     "targetPlatforms": null,
@@ -65,13 +71,13 @@
             "chalk",
             "diorite",
             "emery",
-            "flint",
-            "gabbro" 
+            "gabbro",
+            "flint"
         ],
         "uuid": "69341e12-a9c6-4663-bcb9-da5d47485b6f",
         "watchapp": {
             "watchface": true
         }
     },
-    "version": "1.2.0"
+    "version": "1.3.0"
 }

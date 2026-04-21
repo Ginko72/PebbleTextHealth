@@ -38,12 +38,20 @@ static Layer *s_step_mask_layer;
 static int    s_steps;
 #endif
 
+// Uncomment to test time (makes time static)
+// #define TESTING_TIME
+// #define TESTING_H 8
+// #define TESTING_M 28
+
+// Uncomment to test step count (makes static)
+// #define TESTING_STEPS 11250
+
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   if (bounds.size.w >= 200) {
     cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
     cfg->time_height  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_40;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
     cfg->time2_height  = 42;
     cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
     cfg->date_height   = 22;
@@ -51,20 +59,20 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
     cfg->batt_height   = 22;
     cfg->block_y       = bounds.size.h / 2 - 10; 
   } else if (bounds.size.w >= 180) {
-    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-    cfg->time_height  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_40;
-    cfg->time2_height  = 42;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+    cfg->time_height  = 46;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+    cfg->time2_height  = 26;
+    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->date_height   = 22;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->batt_height   = 22;
     cfg->block_y       = bounds.size.h / 2 - 8;
   } else {
     cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height  = 40;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
-    cfg->time2_height  = 34;
+    cfg->time_height  = 46;
+    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+    cfg->time2_height  = 26;
     cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->date_height   = 16;
     cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
@@ -72,7 +80,7 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
     cfg->block_y       = bounds.size.h / 2 - 6; 
   }
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
-  cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w / 9, 0);
+  cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
   cfg->step_width        = 4;
   cfg->step_outer_rad    = 30;
   cfg->tick_width        = 6;
@@ -80,9 +88,9 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->tick_outer_rad    = cfg->step_outer_rad - cfg->step_width;
   cfg->tick_layer_offset = cfg->step_layer_offset + cfg->step_width;
   cfg->tick_inner_rad    = cfg->tick_outer_rad - cfg->tick_width;
-  cfg->batt_y             = 8;
+  cfg->batt_y             = 8 + cfg->corner_inset/6;
   cfg->bt_gap             = 3;
-  cfg->date_bottom_offset = 8 + cfg->date_height;
+  cfg->date_bottom_offset = 10 + cfg->date_height + cfg->corner_inset/2;
   cfg->date_y             = bounds.size.h - cfg->date_bottom_offset;
   cfg->bt_replaces_batt   = true;
 }
