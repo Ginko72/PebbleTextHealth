@@ -46,7 +46,9 @@ static const char* const TENS[] = {
 };
 
 static size_t append_string(char* buffer, const size_t length, const char* str) {
-  strncat(buffer, str, length);
+  if (length > 1) {
+    strncat(buffer, str, length - 1);
+  }
 
   size_t written = strlen(str);
   return (length > written) ? written : length;
