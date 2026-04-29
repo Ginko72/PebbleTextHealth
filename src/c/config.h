@@ -39,5 +39,6 @@ typedef struct {
   int      date_bottom_offset; // Distance from screen bottom to date layer top (px)
   int      date_y;             // Date text layer top y (px)
   int      date_height;        // Date text layer height (px)
-  int      bt_replaces_batt;   // 1 on small screens: BT icon replaces battery layer
+  int      time_layer_h;       // Line 1 TextLayer height (px)
+  int      time2_layer_h;      // Lines 2 & 3 TextLayer height (px)
 } LayoutConfig;
