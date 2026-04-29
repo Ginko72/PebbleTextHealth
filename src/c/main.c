@@ -20,7 +20,6 @@ static GFont s_batt_font;
 
 // Battery
 static TextLayer *s_batt_layer;
-static int        s_batt_level;
 
 // Tick marks layer and layout
 static Layer       *s_tick_layer;
@@ -48,35 +47,41 @@ static int    s_steps;
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   if (bounds.size.w >= 200) {
-    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-    cfg->time_height  = 54;
+    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+    cfg->time_height   = 54;
+    cfg->time_layer_h  = 60;
     cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
     cfg->time2_height  = 42;
+    cfg->time2_layer_h = 50;
     cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
     cfg->date_height   = 22;
     cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
     cfg->batt_height   = 22;
-    cfg->block_y       = bounds.size.h / 2 - 10; 
+    cfg->block_y       = bounds.size.h / 2 - 10;
   } else if (bounds.size.w >= 180) {
-    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height  = 46;
+    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+    cfg->time_height   = 46;
+    cfg->time_layer_h  = 54;
     cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
     cfg->time2_height  = 26;
+    cfg->time2_layer_h = 34;
     cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->date_height   = 22;
     cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->batt_height   = 22;
     cfg->block_y       = bounds.size.h / 2 - 8;
   } else {
-    cfg->time_font_id = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height  = 46;
+    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+    cfg->time_height   = 46;
+    cfg->time_layer_h  = 54;
     cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
     cfg->time2_height  = 26;
+    cfg->time2_layer_h = 34;
     cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->date_height   = 16;
     cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
     cfg->batt_height   = 16;
-    cfg->block_y       = bounds.size.h / 2 - 6; 
+    cfg->block_y       = bounds.size.h / 2 - 6;
   }
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
   cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
@@ -91,7 +96,6 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->bt_gap             = 3;
   cfg->date_bottom_offset = 10 + cfg->date_height + cfg->corner_inset/2;
   cfg->date_y             = bounds.size.h - cfg->date_bottom_offset;
-  cfg->bt_replaces_batt   = true;
 }
 
 
@@ -135,6 +139,11 @@ static void update_time() {
 #if defined(PBL_HEALTH)
 // Update Steps
 static void update_steps() {
+  #ifdef TESTING_STEPS
+  s_steps = TESTING_STEPS;
+  layer_mark_dirty(s_step_layer);
+  return;
+  #endif
   HealthMetric metric = HealthMetricStepCount;
   time_t start = time_start_of_today();
   time_t end = time(NULL);
@@ -170,7 +179,6 @@ static void health_handler(HealthEventType event, void *context) {
       break;
     default:
       APP_LOG(APP_LOG_LEVEL_INFO, "New HealthService default event");
-      update_steps();
       break;
   }
 }
@@ -180,9 +188,9 @@ static void health_handler(HealthEventType event, void *context) {
 // Tick Handler
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
-#if defined(PBL_HEALTH)
+  #if defined(PBL_HEALTH)
   update_steps();
-#endif
+  #endif
 }
 
 
@@ -190,8 +198,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 static void battery_callback(BatteryChargeState state) {
   static char s_textLine[BUFFER_SIZE];
 
-  s_batt_level = state.charge_percent;
-  snprintf(s_textLine, BUFFER_SIZE, "%d%%", s_batt_level);
+  snprintf(s_textLine, BUFFER_SIZE, "%d%%", state.charge_percent);
   text_layer_set_text(s_batt_layer, s_textLine);
 }
 
@@ -239,10 +246,6 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   GPoint cPoint = grect_center_point(&bounds);
   int cx = cPoint.x;
   int cy = cPoint.y;
-
-  #ifdef TESTING_STEPS
-  s_steps = TESTING_STEPS;
-  #endif
 
   // White ring: proportional for 0-10k, full for >10k — all platforms
   int white_angl = (s_steps <= 10000) ? s_steps * 360 / 10000 : 360;
@@ -297,10 +300,7 @@ static void tick_update_proc(Layer *layer, GContext *ctx) {
 
 static void bluetooth_callback(bool connected) {
   layer_set_hidden(bitmap_layer_get_layer(s_bt_icon_layer), connected);
-  if (s_layout.bt_replaces_batt) {
-    // On small screens: swap battery for BT icon when disconnected
-    layer_set_hidden(text_layer_get_layer(s_batt_layer), !connected);
-  }
+  layer_set_hidden(text_layer_get_layer(s_batt_layer), !connected);
 
   if (!connected) {
     vibes_double_pulse();
@@ -329,21 +329,21 @@ static void main_window_load(Window *window) {
   int time3_y = time2_y + s_layout.time2_height;
 
   // Create the hour (line 1) TextLayer
-  s_time_layer = text_layer_create(GRect(ci, time_y, tw, 60));
+  s_time_layer = text_layer_create(GRect(ci, time_y, tw, s_layout.time_layer_h));
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_font(s_time_layer, s_time_font);
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
   // Create the minute (line 2) TextLayer
-  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, 50));
+  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, s_layout.time2_layer_h));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
   text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
 
   // Create the minute (line 3) TextLayer
-  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, 50));
+  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, s_layout.time2_layer_h));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
@@ -371,10 +371,7 @@ static void main_window_load(Window *window) {
   // Create the Bluetooth icon GBitmap
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
-  // On small screens BT icon sits where the battery layer was; on large screens it sits below it
-  int bt_y = s_layout.bt_replaces_batt
-      ? s_layout.batt_y
-      : s_layout.batt_y + s_layout.batt_height + s_layout.bt_gap;
+  int bt_y = s_layout.batt_y;
   s_bt_icon_layer = bitmap_layer_create(GRect((bounds.size.w - 30) / 2, bt_y, 30, 30));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   bitmap_layer_set_compositing_mode(s_bt_icon_layer, GCompOpSet);
