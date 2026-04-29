@@ -1,16 +1,16 @@
 {
     "author": "N/A",
     "dependencies": {
-    "@rebble/clay": "^1.0.8"
-  },
+        "@rebble/clay": "^1.0.8"
+    },
     "keywords": [
         "pebble-app"
     ],
     "name": "simple-text-steps",
     "pebble": {
         "capabilities": [
-            "health",
-            "configurable"
+            "configurable",
+            "health"
         ],
         "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
@@ -84,5 +84,5 @@
             "watchface": true
         }
     },
-    "version": "1.3.0"
+    "version": "1.4.0"
 }
