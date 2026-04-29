@@ -15,7 +15,7 @@
         "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
         "messageKeys": [
-            "BACKLIGHT_TIMEOUT"
+            "TICK_PERSISTENCE"
         ],
         "projectType": "native",
         "resources": {

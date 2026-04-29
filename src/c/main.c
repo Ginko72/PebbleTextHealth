@@ -6,7 +6,7 @@
 #include "geometry.h"
 #include "settings.h"
 
-extern uint32_t MESSAGE_KEY_BACKLIGHT_TIMEOUT;
+extern uint32_t MESSAGE_KEY_TICK_PERSISTENCE;
 
 static Settings s_settings;
 
@@ -340,9 +340,9 @@ static void tick_update_proc(Layer *layer, GContext *ctx) {
 // Backlight / seconds ring activation
 // ---------------------------------------------------------------------------
 
-static bool       s_backlight_active = false;
-static AppTimer  *s_backlight_timer  = NULL;
-static uint16_t   s_backlight_timeout_ms = 3000;  // overwritten by settings
+static bool       s_tick_persistence_active = false;
+static AppTimer  *s_tick_persistence_timer  = NULL;
+static uint16_t   s_tick_persistence_ms = 3000;  // overwritten by settings
 
 static void seconds_ring_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   if (units_changed & MINUTE_UNIT) {
@@ -351,13 +351,13 @@ static void seconds_ring_tick_handler(struct tm *tick_time, TimeUnits units_chan
   layer_mark_dirty(s_seconds_ring_layer);
 }
 
-static void backlight_timeout_callback(void *context) {
-  if (DEBUG_SECONDS_ALWAYS_ON) { s_backlight_timer = NULL; return; }
+static void tick_persistence_callback(void *context) {
+  if (DEBUG_SECONDS_ALWAYS_ON) { s_tick_persistence_timer = NULL; return; }
   tick_timer_service_unsubscribe();
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   layer_set_hidden(s_seconds_ring_layer, true);
-  s_backlight_active = false;
-  s_backlight_timer  = NULL;
+  s_tick_persistence_active = false;
+  s_tick_persistence_timer  = NULL;
 }
 
 static void activate_backlight(void) {
@@ -365,16 +365,16 @@ static void activate_backlight(void) {
 
   if (DEBUG_SECONDS_ALWAYS_ON) return;
 
-  if (s_backlight_active) {
-    app_timer_reschedule(s_backlight_timer, s_backlight_timeout_ms);
+  if (s_tick_persistence_active) {
+    app_timer_reschedule(s_tick_persistence_timer, s_tick_persistence_ms);
     return;
   }
-  s_backlight_active = true;
+  s_tick_persistence_active = true;
   layer_set_hidden(s_seconds_ring_layer, false);
   tick_timer_service_unsubscribe();
   tick_timer_service_subscribe(SECOND_UNIT, seconds_ring_tick_handler);
-  s_backlight_timer = app_timer_register(s_backlight_timeout_ms,
-                                          backlight_timeout_callback, NULL);
+  s_tick_persistence_timer = app_timer_register(s_tick_persistence_ms,
+                                          tick_persistence_callback, NULL);
 }
 
 static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
@@ -590,11 +590,11 @@ static void main_window_unload(Window *window) {
 
 
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
-  Tuple *t = dict_find(iter, MESSAGE_KEY_BACKLIGHT_TIMEOUT);
+  Tuple *t = dict_find(iter, MESSAGE_KEY_TICK_PERSISTENCE);
   if (t) {
-    s_settings.backlight_timeout_ms = (uint16_t)(t->value->int32 * 1000);
+    s_settings.tick_persistence_ms = (uint16_t)(t->value->int32 * 1000);
     settings_save(&s_settings);
-    s_backlight_timeout_ms = s_settings.backlight_timeout_ms;
+    s_tick_persistence_ms = s_settings.tick_persistence_ms;
   }
 }
 
@@ -602,7 +602,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 // Initialize the main Window and its elements
 static void init() {
   settings_load(&s_settings);
-  s_backlight_timeout_ms = s_settings.backlight_timeout_ms;
+  s_tick_persistence_ms = s_settings.tick_persistence_ms;
 
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
@@ -651,9 +651,9 @@ static void init() {
 
 // De-initialize the app, destroying the main Window and unsubscribing from services
 static void deinit() {
-  if (s_backlight_active && s_backlight_timer) {
-    app_timer_cancel(s_backlight_timer);
-    s_backlight_timer = NULL;
+  if (s_tick_persistence_active && s_tick_persistence_timer) {
+    app_timer_cancel(s_tick_persistence_timer);
+    s_tick_persistence_timer = NULL;
   }
   animation_unschedule_all();
   tick_timer_service_unsubscribe();

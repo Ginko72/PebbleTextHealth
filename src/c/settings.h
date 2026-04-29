@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 typedef struct {
-  uint16_t backlight_timeout_ms;  // 3000–10000 ms, step 1000
+  uint16_t tick_persistence_ms;  // 3000–60000 ms, step 1000
 } Settings;
 
 void settings_load(Settings *s);
