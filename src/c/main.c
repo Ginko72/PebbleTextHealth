@@ -3,6 +3,12 @@
 
 #include "num2words-en.h"
 #include "config.h"
+#include "geometry.h"
+#include "settings.h"
+
+extern uint32_t MESSAGE_KEY_TICK_PERSISTENCE;
+
+static Settings s_settings;
 
 static Window    *s_main_window;
 
@@ -33,8 +39,15 @@ static GBitmap     *s_bt_icon_bitmap;
 #if defined(PBL_HEALTH)
 static Layer *s_step_layer;
 static Layer *s_step_mask_layer;
+static int    s_step_level;      // 0: 0-10k, 1: 10-20k, 2: 20-30k, 3: >30k
+static int32_t s_step_angle;     // Angle for the current lap progress
 static int    s_steps;
 #endif
+
+// Seconds ring — hidden unless backlight is active
+static Layer  *s_seconds_ring_layer;
+static GPoint  s_tick_starts[60];
+static GPoint  s_tick_ends[60];
 
 // Uncomment to test time (makes time static)
 // #define TESTING_TIME
@@ -87,15 +100,29 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
   cfg->step_width        = 4;
   cfg->step_outer_rad    = 30;
-  cfg->tick_width        = 6;
+  cfg->tick_width        = 4;
   cfg->step_layer_offset = 0;
   cfg->tick_outer_rad    = cfg->step_outer_rad - cfg->step_width;
   cfg->tick_layer_offset = cfg->step_layer_offset + cfg->step_width;
   cfg->tick_inner_rad    = cfg->tick_outer_rad - cfg->tick_width;
-  cfg->batt_y             = 8 + cfg->corner_inset/6;
+  cfg->batt_y             = 12 + cfg->corner_inset/6;
   cfg->bt_gap             = 3;
-  cfg->date_bottom_offset = 10 + cfg->date_height + cfg->corner_inset/2;
+  cfg->date_bottom_offset = 14 + cfg->date_height + cfg->corner_inset/2;
   cfg->date_y             = bounds.size.h - cfg->date_bottom_offset;
+
+  // Seconds ring geometry
+  cfg->seconds_tick_length = (uint16_t)(4 + bounds.size.w / 72);  // 4px (144px) → 7px (260px)
+  #if defined(PBL_ROUND)
+  cfg->seconds_ring_radius = (uint16_t)(bounds.size.w / 2 - cfg->step_layer_offset - cfg->step_width - 2);
+  cfg->seconds_ring_rect   = GRectZero;
+  #else
+  // Seconds ring sits just inside the step ring's inner edge
+  int sri = cfg->step_layer_offset + cfg->step_width + 2;
+  cfg->seconds_ring_rect = GRect(sri, sri,
+                                 bounds.size.w - 2 * sri,
+                                 bounds.size.h - 2 * sri);
+  cfg->seconds_ring_radius = 0;
+  #endif
 }
 
 
@@ -139,24 +166,35 @@ static void update_time() {
 #if defined(PBL_HEALTH)
 // Update Steps
 static void update_steps() {
+  // Get raw steps
   #ifdef TESTING_STEPS
   s_steps = TESTING_STEPS;
-  layer_mark_dirty(s_step_layer);
-  return;
+  #else
+  s_steps = (int)health_service_sum_today(HealthMetricStepCount);
   #endif
-  HealthMetric metric = HealthMetricStepCount;
-  time_t start = time_start_of_today();
-  time_t end = time(NULL);
 
-  HealthServiceAccessibilityMask mask = health_service_metric_accessible(metric, start, end);
-
-  if (mask & HealthServiceAccessibilityMaskAvailable) {
-    s_steps = (int)health_service_sum_today(metric);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", s_steps);
-    layer_mark_dirty(s_step_layer);
+  s_step_level = s_steps / 10000;
+  int remainder = s_steps % 10000;
+  
+  if (s_step_level >= 3) {
+    s_step_level = 3;
+    s_step_angle = TRIG_MAX_ANGLE;
   } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Data unavailable!");
+    #if defined(PBL_ROUND)
+    s_step_angle = (int32_t)remainder * TRIG_MAX_ANGLE / 10000;
+    #else
+    GRect bounds = layer_get_bounds(window_get_root_layer(s_main_window));
+    GRect step_rect = GRect(s_layout.step_layer_offset, s_layout.step_layer_offset,
+                            bounds.size.w - 2 * s_layout.step_layer_offset,
+                            bounds.size.h - 2 * s_layout.step_layer_offset);
+    uint16_t perim = rounded_rect_perimeter(step_rect, (uint16_t)s_layout.tick_outer_rad);
+    uint16_t dist = (uint16_t)((uint32_t)remainder * perim / 10000);
+    GPoint pt = rounded_rect_perimeter_point(step_rect, (uint16_t)s_layout.tick_outer_rad, perim, dist);
+    s_step_angle = trig_angle_from_center(pt, GPoint(bounds.size.w / 2, bounds.size.h / 2));
+    #endif
   }
+
+  layer_mark_dirty(s_step_layer);
 }
 
 
@@ -246,47 +284,47 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   GPoint cPoint = grect_center_point(&bounds);
   int cx = cPoint.x;
   int cy = cPoint.y;
+  GRect radial_rect = GRect(cx - 1, cy - ((bounds.size.w + bounds.size.h) / 2),
+                            3, bounds.size.h + bounds.size.w);
 
-  // White ring: proportional for 0-10k, full for >10k — all platforms
-  int white_angl = (s_steps <= 10000) ? s_steps * 360 / 10000 : 360;
-  if (white_angl > 0) {
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_radial(ctx, GRect(cx - 1,
-                                    cy - ((bounds.size.w + bounds.size.h) / 2),
-                                    3, bounds.size.h + bounds.size.w),
-                         GOvalScaleModeFillCircle, 150,
-                         0, DEG_TO_TRIGANGLE(white_angl));
-  }
-
-  // Green ring (10-20k) and purple ring (20-30k) — color platforms only
+  // Stage 1: Draw background ring for completed laps
   #if defined(PBL_COLOR)
-  int green_angl  = 0;
-  int purple_angl = 0;
-  if (s_steps > 10000 && s_steps <= 20000) {
-    green_angl = (s_steps - 10000) * 360 / 10000;
-  } else if (s_steps > 20000 && s_steps <= 30000) {
-    green_angl = 360;
-    purple_angl = (s_steps - 20000) * 360 / 10000;
-  }
-  if (green_angl > 0) {
+  if (s_step_level == 1) {
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, TRIG_MAX_ANGLE);
+  } else if (s_step_level >= 2) {
     graphics_context_set_fill_color(ctx, GColorGreen);
-    graphics_fill_radial(ctx, GRect(cx - 1,
-                                    cy - ((bounds.size.w + bounds.size.h) / 2),
-                                    3, bounds.size.h + bounds.size.w),
-                         GOvalScaleModeFillCircle, 150,
-                         0, DEG_TO_TRIGANGLE(green_angl));
+    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, TRIG_MAX_ANGLE);
   }
-  if (purple_angl > 0) {
-    graphics_context_set_fill_color(ctx, GColorVividViolet);
-    graphics_fill_radial(ctx, GRect(cx - 1,
-                                    cy - ((bounds.size.w + bounds.size.h) / 2),
-                                    3, bounds.size.h + bounds.size.w),
-                         GOvalScaleModeFillCircle, 150,
-                         0, DEG_TO_TRIGANGLE(purple_angl));
+  #endif
+
+  // Stage 2: Draw current lap progress
+  GColor foreground_color = GColorWhite;
+  #if defined(PBL_COLOR)
+  if (s_step_level == 1) foreground_color = GColorGreen;
+  else if (s_step_level >= 2) foreground_color = GColorVividViolet;
+  #endif
+
+  if (s_step_angle > 0) {
+    graphics_context_set_fill_color(ctx, foreground_color);
+    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, (uint16_t)s_step_angle);
   }
-  #endif // PBL_COLOR
 }
 #endif // PBL_HEALTH
+
+
+// Seconds ring update proc — draw-calls only, no computation
+static void seconds_ring_update_proc(Layer *layer, GContext *ctx) {
+  time_t now = time(NULL);
+  struct tm *t = localtime(&now);
+  int current_second = t->tm_sec;
+
+  for (int i = 0; i < 60; i++) {
+    graphics_context_set_stroke_color(ctx,
+        (i < current_second) ? GColorWhite : GColorDarkGray);
+    graphics_draw_line(ctx, s_tick_starts[i], s_tick_ends[i]);
+  }
+}
 
 
 // Tick Layer update proc (future tick marks feature)
@@ -297,6 +335,61 @@ static void tick_update_proc(Layer *layer, GContext *ctx) {
   // int cy = cPoint.y;
 }
 
+
+// ---------------------------------------------------------------------------
+// Backlight / seconds ring activation
+// ---------------------------------------------------------------------------
+
+static bool       s_tick_persistence_active = false;
+static AppTimer  *s_tick_persistence_timer  = NULL;
+static uint16_t   s_tick_persistence_ms = 3000;  // overwritten by settings
+
+static void seconds_ring_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  if (units_changed & MINUTE_UNIT) {
+    tick_handler(tick_time, units_changed);
+  }
+  layer_mark_dirty(s_seconds_ring_layer);
+}
+
+static void tick_persistence_callback(void *context) {
+  if (DEBUG_SECONDS_ALWAYS_ON) { s_tick_persistence_timer = NULL; return; }
+  tick_timer_service_unsubscribe();
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  layer_set_hidden(s_seconds_ring_layer, true);
+  s_tick_persistence_active = false;
+  s_tick_persistence_timer  = NULL;
+}
+
+static void activate_backlight(void) {
+  light_enable_interaction();
+
+  if (DEBUG_SECONDS_ALWAYS_ON) return;
+
+  if (s_tick_persistence_active) {
+    app_timer_reschedule(s_tick_persistence_timer, s_tick_persistence_ms);
+    return;
+  }
+  s_tick_persistence_active = true;
+  layer_set_hidden(s_seconds_ring_layer, false);
+  tick_timer_service_unsubscribe();
+  tick_timer_service_subscribe(SECOND_UNIT, seconds_ring_tick_handler);
+  s_tick_persistence_timer = app_timer_register(s_tick_persistence_ms,
+                                          tick_persistence_callback, NULL);
+}
+
+static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+  activate_backlight();
+}
+
+static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  activate_backlight();
+}
+
+static void click_config_provider(void *context) {
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+}
+
+// ---------------------------------------------------------------------------
 
 static void bluetooth_callback(bool connected) {
   layer_set_hidden(bitmap_layer_get_layer(s_bt_icon_layer), connected);
@@ -391,11 +484,65 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_step_mask_layer, step_mask_update_proc);
   #endif
 
+  // Precompute seconds ring tick start/end points — one-time, no FPU
+  GRect seconds_ring_bounds = GRect(0, 0, bounds.size.w, bounds.size.h);
+  #if defined(PBL_ROUND)
+  {
+    GPoint scr_center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
+    int outer_r = (int)s_layout.seconds_ring_radius;
+    int inner_r = outer_r - (int)s_layout.seconds_tick_length;
+    for (int i = 0; i < 60; i++) {
+      int32_t angle = (int32_t)i * TRIG_MAX_ANGLE / 60;
+      int32_t sin_a = sin_lookup(angle);
+      int32_t cos_a = cos_lookup(angle);
+      s_tick_starts[i] = (GPoint){
+        scr_center.x + (int16_t)(sin_a * outer_r / TRIG_MAX_RATIO),
+        scr_center.y - (int16_t)(cos_a * outer_r / TRIG_MAX_RATIO)
+      };
+      s_tick_ends[i] = (GPoint){
+        scr_center.x + (int16_t)(sin_a * inner_r / TRIG_MAX_RATIO),
+        scr_center.y - (int16_t)(cos_a * inner_r / TRIG_MAX_RATIO)
+      };
+    }
+  }
+  #else
+  {
+    GRect sr = s_layout.seconds_ring_rect;
+    uint16_t sr_perim = rounded_rect_perimeter(sr, (uint16_t)s_layout.tick_inner_rad);
+    GPoint sr_local_center = GPoint(sr.size.w / 2, sr.size.h / 2);
+    for (int i = 0; i < 60; i++) {
+      uint16_t dist = (uint16_t)((uint32_t)i * sr_perim / 60);
+      GPoint outer_pt = rounded_rect_perimeter_point(
+          GRect(0, 0, sr.size.w, sr.size.h),
+          (uint16_t)s_layout.tick_inner_rad, sr_perim, dist);
+      int dx = sr_local_center.x - outer_pt.x;
+      int dy = sr_local_center.y - outer_pt.y;
+      // Integer sqrt via 6 Newton-Raphson steps (converges to distance * 16)
+      int mag2 = dx * dx + dy * dy;
+      int mag16 = 256;
+      for (int k = 0; k < 6; k++) mag16 = (mag16 + mag2 * 256 / mag16) / 2;
+
+      if (mag16 == 0) mag16 = 1; // Prevent division by zero
+      int tl = (int)s_layout.seconds_tick_length;
+      s_tick_starts[i] = outer_pt;
+      s_tick_ends[i] = (GPoint){
+        outer_pt.x + (int16_t)((int32_t)dx * tl * 16 / mag16),
+        outer_pt.y + (int16_t)((int32_t)dy * tl * 16 / mag16)
+      };
+    }
+    seconds_ring_bounds = sr;
+  }
+  #endif
+  s_seconds_ring_layer = layer_create(seconds_ring_bounds);
+  layer_set_update_proc(s_seconds_ring_layer, seconds_ring_update_proc);
+  layer_set_hidden(s_seconds_ring_layer, !DEBUG_SECONDS_ALWAYS_ON);
+
   // Add layers to the Window (order matters for z-ordering)
   #if defined(PBL_HEALTH)
   layer_add_child(window_layer, s_step_layer);
   layer_add_child(window_layer, s_step_mask_layer);
   #endif
+  layer_add_child(window_layer, s_seconds_ring_layer);
   layer_add_child(window_layer, s_tick_layer);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_time2_layer));
@@ -406,6 +553,9 @@ static void main_window_load(Window *window) {
 
   // Show the correct state of the BT connection from the start
   bluetooth_callback(connection_service_peek_pebble_app_connection());
+
+  accel_tap_service_subscribe(accel_tap_handler);
+  window_set_click_config_provider(window, click_config_provider);
 }
 
 // Unload main Window elements
@@ -424,11 +574,14 @@ static void main_window_unload(Window *window) {
   fonts_unload_custom_font(s_batt_font);
 
   layer_destroy(s_tick_layer);
+  layer_destroy(s_seconds_ring_layer);
 
   #if defined(PBL_HEALTH)
   layer_destroy(s_step_layer);
   layer_destroy(s_step_mask_layer);
   #endif
+
+  accel_tap_service_unsubscribe();
 
   // Destroy Bluetooth elements
   gbitmap_destroy(s_bt_icon_bitmap);
@@ -436,8 +589,21 @@ static void main_window_unload(Window *window) {
 }
 
 
+static void prv_inbox_received(DictionaryIterator *iter, void *context) {
+  Tuple *t = dict_find(iter, MESSAGE_KEY_TICK_PERSISTENCE);
+  if (t) {
+    s_settings.tick_persistence_ms = (uint16_t)(t->value->int32 * 1000);
+    settings_save(&s_settings);
+    s_tick_persistence_ms = s_settings.tick_persistence_ms;
+  }
+}
+
+
 // Initialize the main Window and its elements
 static void init() {
+  settings_load(&s_settings);
+  s_tick_persistence_ms = s_settings.tick_persistence_ms;
+
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
   window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -448,8 +614,16 @@ static void init() {
 
   update_time();
 
+  #if defined(PBL_HEALTH)
+  update_steps();
+  #endif
+
   // Register with TickTimerService
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  if (DEBUG_SECONDS_ALWAYS_ON) {
+    tick_timer_service_subscribe(SECOND_UNIT, seconds_ring_tick_handler);
+  } else {
+    tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  }
 
   // Register for health updates
   #if defined(PBL_HEALTH)
@@ -469,11 +643,18 @@ static void init() {
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = bluetooth_callback
   });
+
+  app_message_register_inbox_received(prv_inbox_received);
+  app_message_open(64, 0);
 }
 
 
 // De-initialize the app, destroying the main Window and unsubscribing from services
 static void deinit() {
+  if (s_tick_persistence_active && s_tick_persistence_timer) {
+    app_timer_cancel(s_tick_persistence_timer);
+    s_tick_persistence_timer = NULL;
+  }
   animation_unschedule_all();
   tick_timer_service_unsubscribe();
   #if defined(PBL_HEALTH)
