@@ -1,6 +1,5 @@
 #include <pebble.h>
 #include <ctype.h>
-#include <math.h>
 
 #include "num2words-en.h"
 #include "config.h"
@@ -171,6 +170,7 @@ static void health_handler(HealthEventType event, void *context) {
       break;
     default:
       APP_LOG(APP_LOG_LEVEL_INFO, "New HealthService default event");
+      update_steps();
       break;
   }
 }
@@ -180,6 +180,9 @@ static void health_handler(HealthEventType event, void *context) {
 // Tick Handler
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
+#if defined(PBL_HEALTH)
+  update_steps();
+#endif
 }
 
 
@@ -242,7 +245,7 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   #endif
 
   // White ring: proportional for 0-10k, full for >10k — all platforms
-  int white_angl = (s_steps <= 10000) ? trunc(s_steps * 360.0 / 10000.0) : 360;
+  int white_angl = (s_steps <= 10000) ? s_steps * 360 / 10000 : 360;
   if (white_angl > 0) {
     graphics_context_set_fill_color(ctx, GColorWhite);
     graphics_fill_radial(ctx, GRect(cx - 1,
@@ -257,10 +260,10 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
   int green_angl  = 0;
   int purple_angl = 0;
   if (s_steps > 10000 && s_steps <= 20000) {
-    green_angl = trunc((s_steps - 10000) * 360.0 / 10000.0);
+    green_angl = (s_steps - 10000) * 360 / 10000;
   } else if (s_steps > 20000 && s_steps <= 30000) {
     green_angl = 360;
-    purple_angl = trunc((s_steps - 20000) * 360.0 / 10000.0);
+    purple_angl = (s_steps - 20000) * 360 / 10000;
   }
   if (green_angl > 0) {
     graphics_context_set_fill_color(ctx, GColorGreen);
