@@ -1,17 +1,22 @@
 {
     "author": "N/A",
-    "dependencies": {},
+    "dependencies": {
+    "@rebble/clay": "^1.0.8"
+  },
     "keywords": [
         "pebble-app"
     ],
     "name": "simple-text-steps",
     "pebble": {
         "capabilities": [
-            "health"
+            "health",
+            "configurable"
         ],
         "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
-        "messageKeys": [],
+        "messageKeys": [
+            "BACKLIGHT_TIMEOUT"
+        ],
         "projectType": "native",
         "resources": {
             "media": [

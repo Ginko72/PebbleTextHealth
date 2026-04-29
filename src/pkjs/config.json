@@ -1,0 +1,13 @@
+[
+  { "type": "heading", "defaultValue": "Simple Text Settings" },
+  {
+    "type": "slider",
+    "messageKey": "BACKLIGHT_TIMEOUT",
+    "label": "Backlight Timeout (seconds)",
+    "defaultValue": 3,
+    "min": 3,
+    "max": 10,
+    "step": 1
+  },
+  { "type": "submit", "defaultValue": "Save Settings" }
+]

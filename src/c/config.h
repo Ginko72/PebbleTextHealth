@@ -5,6 +5,9 @@
 
 // General config
 #define DEBUG       false
+#ifndef DEBUG_SECONDS_ALWAYS_ON
+#define DEBUG_SECONDS_ALWAYS_ON false
+#endif
 #define BUFFER_SIZE 44
 
 // Complete strftime format string (day-name prefix + date)
@@ -15,7 +18,7 @@
 #endif
 
 // Per-platform layout configuration, populated by layout_config_init()
-#include <stdint.h>
+#include <pebble.h>
 typedef struct {
   uint32_t time_font_id;       // Large time font resource ID
   uint32_t time2_font_id;      // Medium time font resource ID
@@ -41,4 +44,9 @@ typedef struct {
   int      date_height;        // Date text layer height (px)
   int      time_layer_h;       // Line 1 TextLayer height (px)
   int      time2_layer_h;      // Lines 2 & 3 TextLayer height (px)
+
+  // Seconds ring geometry
+  uint16_t seconds_tick_length;  // radial length of each tick mark (px)
+  uint16_t seconds_ring_radius;  // round platforms: outer radius of tick ring
+  GRect    seconds_ring_rect;    // rect platforms: tight bounds of tick annular band
 } LayoutConfig;
