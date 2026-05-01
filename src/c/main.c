@@ -65,43 +65,43 @@ static GPoint  s_tick_ends[60];
 
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
-  if (bounds.size.w >= 200) {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-    cfg->time_height   = 54;
-    cfg->time_layer_h  = 60;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
-    cfg->time2_height  = 42;
-    cfg->time2_layer_h = 50;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-    cfg->date_height   = 22;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-    cfg->batt_height   = 22;
-    cfg->block_y       = bounds.size.h / 2 - 10;
-  } else if (bounds.size.w >= 180) {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height   = 46;
-    cfg->time_layer_h  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-    cfg->time2_height  = 26;
-    cfg->time2_layer_h = 34;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->date_height   = 22;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->batt_height   = 22;
-    cfg->block_y       = bounds.size.h / 2 - 8;
-  } else {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height   = 46;
-    cfg->time_layer_h  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-    cfg->time2_height  = 26;
-    cfg->time2_layer_h = 34;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->date_height   = 16;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->batt_height   = 16;
-    cfg->block_y       = bounds.size.h / 2 - 6;
-  }
+#if PBL_DISPLAY_WIDTH >= 200
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+  cfg->time_height   = 54;
+  cfg->time_layer_h  = 60;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
+  cfg->time2_height  = 42;
+  cfg->time2_layer_h = 50;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+  cfg->date_height   = 22;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+  cfg->batt_height   = 22;
+  cfg->block_y       = bounds.size.h / 2 - 10;
+#elif PBL_DISPLAY_WIDTH >= 180
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+  cfg->time_height   = 46;
+  cfg->time_layer_h  = 54;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+  cfg->time2_height  = 26;
+  cfg->time2_layer_h = 34;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->date_height   = 22;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->batt_height   = 22;
+  cfg->block_y       = bounds.size.h / 2 - 8;
+#else
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+  cfg->time_height   = 46;
+  cfg->time_layer_h  = 54;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+  cfg->time2_height  = 26;
+  cfg->time2_layer_h = 34;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->date_height   = 16;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->batt_height   = 16;
+  cfg->block_y       = bounds.size.h / 2 - 6;
+#endif
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
   cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
   cfg->step_width        = 4;
