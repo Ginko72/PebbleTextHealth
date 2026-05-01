@@ -10,7 +10,7 @@ void settings_load(Settings *s) {
       : 3000;
   s->step_target = persist_exists(KEY_STEP_TARGET)
       ? (uint16_t)persist_read_int(KEY_STEP_TARGET)
-      : 10;
+      : 10000;
 }
 
 void settings_save(const Settings *s) {

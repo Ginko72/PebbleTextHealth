@@ -607,7 +607,7 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   if (t) {
     s_settings.step_target = (uint16_t)t->value->int32;
     settings_save(&s_settings);
-    s_step_target = s_settings.step_target * 1000;
+    s_step_target = s_settings.step_target;
     update_steps();
   }
   #endif
@@ -619,7 +619,7 @@ static void init() {
   settings_load(&s_settings);
   s_tick_persistence_ms = s_settings.tick_persistence_ms;
   #if defined(PBL_HEALTH)
-  s_step_target = s_settings.step_target * 1000;
+  s_step_target = s_settings.step_target;
   #endif
 
   s_main_window = window_create();
