@@ -15,8 +15,8 @@
         "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
         "messageKeys": [
-            "TICK_PERSISTENCE", 
-            "STEP_TARGET", 
+            "TICK_PERSISTENCE",
+            "STEP_TARGET",
             "DATE_FORMAT_US"
         ],
         "projectType": "native",
@@ -31,42 +31,69 @@
                     "characterRegex": "[a-z]",
                     "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_46",
-                    "targetPlatforms": ["emery", "gabbro"],
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ],
                     "type": "font"
                 },
                 {
                     "characterRegex": "[a-z]",
                     "file": "fonts/Amiko-bold.ttf",
                     "name": "FONT_AMIKO_BOLD_38",
-                    "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "flint"],
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ],
                     "type": "font"
                 },
                 {
                     "characterRegex": "[a-z']",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_32",
-                    "targetPlatforms": ["emery", "gabbro"],
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ],
                     "type": "font"
                 },
                 {
                     "characterRegex": "[a-z']",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_24",
-                    "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "flint"],
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ],
                     "type": "font"
                 },
                 {
                     "characterRegex": "[a-z 0-9.%]",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_22",
-                    "targetPlatforms": ["emery", "gabbro"],
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ],
                     "type": "font"
                 },
                 {
                     "characterRegex": "[a-z 0-9.%]",
                     "file": "fonts/Amiko-regular.ttf",
                     "name": "FONT_AMIKO_REGULAR_16",
-                    "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "flint"],
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ],
                     "type": "font"
                 }
             ]
@@ -86,5 +113,5 @@
             "watchface": true
         }
     },
-    "version": "1.4.0"
+    "version": "1.6.0"
 }
