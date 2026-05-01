@@ -45,13 +45,12 @@ static const char* const TENS[] = {
   "ninety"
 };
 
-static size_t append_string(char* buffer, const size_t length, const char* str) {
-  if (length > 1) {
-    strncat(buffer, str, length - 1);
+static size_t append_string(char* buffer, const size_t remaining, const char* str) {
+  size_t prev_len = strlen(buffer);
+  if (remaining > 1) {
+    strncat(buffer, str, remaining - 1);
   }
-
-  size_t written = strlen(str);
-  return (length > written) ? written : length;
+  return strlen(buffer) - prev_len;
 }
 
 static size_t append_number(char* words, size_t remaining, int num, short oh) {
@@ -87,14 +86,17 @@ void time_to_words(int hours, int minutes, char* words, size_t length) {
   memset(words, 0, length);
 
   if (hours == 0 || hours == 12) {
-    remaining -= append_string(words, remaining, TEENS[2]);
+    append_string(words, remaining, TEENS[2]);
   } else {
-    remaining -= append_number(words, remaining, hours % 12, false);
+    append_number(words, remaining, hours % 12, false);
   }
 
-  remaining -= append_string(words, remaining, " ");
-  remaining -= append_number(words, remaining, minutes, TimeRenderOh);
-  remaining -= append_string(words, remaining, " ");
+  remaining = length - strlen(words);
+  append_string(words, remaining, " ");
+  remaining = length - strlen(words);
+  append_number(words, remaining, minutes, TimeRenderOh);
+  remaining = length - strlen(words);
+  append_string(words, remaining, " ");
 }
 
 void time_to_3words(int hours, int minutes, char *line1, char *line2, char *line3, size_t length)

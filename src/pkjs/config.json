@@ -18,5 +18,12 @@
     "max": 60,
     "step": 1
   },
+  {
+    "type": "toggle",
+    "messageKey": "DATE_FORMAT_US",
+    "label": "US Date Format (MM.DD)",
+    "description": "Toggle off for International format (DD.MM).",
+    "defaultValue": true
+  },
   { "type": "submit", "defaultValue": "Save Settings" }
 ]

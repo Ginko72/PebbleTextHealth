@@ -8,6 +8,7 @@
 
 extern uint32_t MESSAGE_KEY_TICK_PERSISTENCE;
 extern uint32_t MESSAGE_KEY_STEP_TARGET;
+extern uint32_t MESSAGE_KEY_DATE_FORMAT_US;
 
 static Settings s_settings;
 
@@ -65,43 +66,43 @@ static GPoint  s_tick_ends[60];
 
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
-  if (bounds.size.w >= 200) {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-    cfg->time_height   = 54;
-    cfg->time_layer_h  = 60;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
-    cfg->time2_height  = 42;
-    cfg->time2_layer_h = 50;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-    cfg->date_height   = 22;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-    cfg->batt_height   = 22;
-    cfg->block_y       = bounds.size.h / 2 - 10;
-  } else if (bounds.size.w >= 180) {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height   = 46;
-    cfg->time_layer_h  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-    cfg->time2_height  = 26;
-    cfg->time2_layer_h = 34;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->date_height   = 22;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->batt_height   = 22;
-    cfg->block_y       = bounds.size.h / 2 - 8;
-  } else {
-    cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-    cfg->time_height   = 46;
-    cfg->time_layer_h  = 54;
-    cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-    cfg->time2_height  = 26;
-    cfg->time2_layer_h = 34;
-    cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->date_height   = 16;
-    cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-    cfg->batt_height   = 16;
-    cfg->block_y       = bounds.size.h / 2 - 6;
-  }
+#if PBL_DISPLAY_WIDTH >= 200
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+  cfg->time_height   = 54;
+  cfg->time_layer_h  = 60;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
+  cfg->time2_height  = 42;
+  cfg->time2_layer_h = 50;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+  cfg->date_height   = 22;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+  cfg->batt_height   = 22;
+  cfg->block_y       = bounds.size.h / 2 - 10;
+#elif PBL_DISPLAY_WIDTH >= 180
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+  cfg->time_height   = 46;
+  cfg->time_layer_h  = 54;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+  cfg->time2_height  = 26;
+  cfg->time2_layer_h = 34;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->date_height   = 22;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->batt_height   = 22;
+  cfg->block_y       = bounds.size.h / 2 - 8;
+#else
+  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+  cfg->time_height   = 46;
+  cfg->time_layer_h  = 54;
+  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+  cfg->time2_height  = 26;
+  cfg->time2_layer_h = 34;
+  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->date_height   = 16;
+  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+  cfg->batt_height   = 16;
+  cfg->block_y       = bounds.size.h / 2 - 6;
+#endif
   cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
   cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
   cfg->step_width        = 4;
@@ -159,7 +160,8 @@ static void update_time() {
 
   // Date String
   static char s_date_buffer[16];
-  strftime(s_date_buffer, sizeof(s_date_buffer), DateFormat, tick_time);
+  const char *format = s_settings.date_format_is_us ? "%a %m.%d" : "%a %d.%m";
+  strftime(s_date_buffer, sizeof(s_date_buffer), format, tick_time);
   // Lowercase 1st char of day
   s_date_buffer[0] = tolower((unsigned char)s_date_buffer[0]);
   // Remove leading zeros. Process index 7 first to preserve index 4.
@@ -611,6 +613,12 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     update_steps();
   }
   #endif
+  t = dict_find(iter, MESSAGE_KEY_DATE_FORMAT_US);
+  if (t) {
+    s_settings.date_format_is_us = t->value->int32 != 0;
+    settings_save(&s_settings);
+    update_time();
+  }
 }
 
 
@@ -663,7 +671,7 @@ static void init() {
   });
 
   app_message_register_inbox_received(prv_inbox_received);
-  app_message_open(64, 0);
+  app_message_open(128, 0);
 }
 
 
