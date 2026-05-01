@@ -1,7 +1,6 @@
 ////////////////////////////////////
 // Watch Face Variants
 #define TimeRenderOh  true
-#define DateFormatUS  true
 
 // General config
 #define DEBUG       false
@@ -13,14 +12,6 @@
 #endif
 
 #define BUFFER_SIZE 44
-
-// Complete strftime format string (day-name prefix + date)
-#if DateFormatUS
-#define DateFormat "%a %m.%d"
-#else
-#define DateFormat "%a %d.%m"
-#endif
-
 // Per-platform layout configuration, populated by layout_config_init()
 #include <pebble.h>
 typedef struct {

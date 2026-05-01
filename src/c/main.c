@@ -8,6 +8,7 @@
 
 extern uint32_t MESSAGE_KEY_TICK_PERSISTENCE;
 extern uint32_t MESSAGE_KEY_STEP_TARGET;
+extern uint32_t MESSAGE_KEY_DATE_FORMAT_US;
 
 static Settings s_settings;
 
@@ -159,7 +160,8 @@ static void update_time() {
 
   // Date String
   static char s_date_buffer[16];
-  strftime(s_date_buffer, sizeof(s_date_buffer), DateFormat, tick_time);
+  const char *format = s_settings.date_format_is_us ? "%a %m.%d" : "%a %d.%m";
+  strftime(s_date_buffer, sizeof(s_date_buffer), format, tick_time);
   // Lowercase 1st char of day
   s_date_buffer[0] = tolower((unsigned char)s_date_buffer[0]);
   // Remove leading zeros. Process index 7 first to preserve index 4.
@@ -611,6 +613,12 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     update_steps();
   }
   #endif
+  t = dict_find(iter, MESSAGE_KEY_DATE_FORMAT_US);
+  if (t) {
+    s_settings.date_format_is_us = t->value->int32 != 0;
+    settings_save(&s_settings);
+    update_time();
+  }
 }
 
 
@@ -663,7 +671,7 @@ static void init() {
   });
 
   app_message_register_inbox_received(prv_inbox_received);
-  app_message_open(64, 0);
+  app_message_open(128, 0);
 }
 
 

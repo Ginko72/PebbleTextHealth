@@ -15,8 +15,9 @@
         "displayName": "Simple Text Oh One Steps",
         "enableMultiJS": true,
         "messageKeys": [
-            "TICK_PERSISTENCE",
-            "STEP_TARGET"
+            "TICK_PERSISTENCE", 
+            "STEP_TARGET", 
+            "DATE_FORMAT_US"
         ],
         "projectType": "native",
         "resources": {
