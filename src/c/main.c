@@ -50,12 +50,16 @@ static GPoint  s_tick_starts[60];
 static GPoint  s_tick_ends[60];
 
 // Uncomment to test time (makes time static)
-// #define TESTING_TIME
-// #define TESTING_H 8
-// #define TESTING_M 28
+// #define TESTING_TIME   // 12:17 for width and 8:28 for height
+// #define TESTING_H 12
+// #define TESTING_M 17
 
 // Uncomment to test step count (makes static)
 // #define TESTING_STEPS 11250
+
+// Uncomment for seconds testing
+// #undef DEBUG_SECONDS_ALWAYS_ON
+// #define DEBUG_SECONDS_ALWAYS_ON true
 
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {

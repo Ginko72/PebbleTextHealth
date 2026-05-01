@@ -7,7 +7,11 @@
 #define DEBUG       false
 #ifndef DEBUG_SECONDS_ALWAYS_ON
 #define DEBUG_SECONDS_ALWAYS_ON false
+#else
+#undef DEBUG_SECONDS_ALWAYS_ON
+#define DEBUG_SECONDS_ALWAYS_ON true
 #endif
+
 #define BUFFER_SIZE 44
 
 // Complete strftime format string (day-name prefix + date)
