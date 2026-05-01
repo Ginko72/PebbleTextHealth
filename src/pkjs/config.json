@@ -2,6 +2,15 @@
   { "type": "heading", "defaultValue": "Simple Text Settings" },
   {
     "type": "slider",
+    "messageKey": "STEP_TARGET",
+    "label": "Daily Step Goal",
+    "defaultValue": 10000,
+    "min": 1000,
+    "max": 20000,
+    "step": 250
+  },
+  {
+    "type": "slider",
     "messageKey": "TICK_PERSISTENCE",
     "label": "Tick Mark Persistence (seconds)",
     "defaultValue": 3,

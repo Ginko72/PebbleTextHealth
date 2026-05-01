@@ -7,6 +7,7 @@
 #include "settings.h"
 
 extern uint32_t MESSAGE_KEY_TICK_PERSISTENCE;
+extern uint32_t MESSAGE_KEY_STEP_TARGET;
 
 static Settings s_settings;
 
@@ -39,9 +40,10 @@ static GBitmap     *s_bt_icon_bitmap;
 #if defined(PBL_HEALTH)
 static Layer *s_step_layer;
 static Layer *s_step_mask_layer;
-static int    s_step_level;      // 0: 0-10k, 1: 10-20k, 2: 20-30k, 3: >30k
+static int    s_step_level;      // 0: <target, 1: 2×target, 2: 3×target, 3: ≥3×target
 static int32_t s_step_angle;     // Angle for the current lap progress
 static int    s_steps;
+static int    s_step_target;     // configured daily goal (steps)
 #endif
 
 // Seconds ring — hidden unless backlight is active
@@ -177,22 +179,22 @@ static void update_steps() {
   s_steps = (int)health_service_sum_today(HealthMetricStepCount);
   #endif
 
-  s_step_level = s_steps / 10000;
-  int remainder = s_steps % 10000;
+  s_step_level = s_steps / s_step_target;
+  int remainder = s_steps % s_step_target;
   
   if (s_step_level >= 3) {
     s_step_level = 3;
     s_step_angle = TRIG_MAX_ANGLE;
   } else {
     #if defined(PBL_ROUND)
-    s_step_angle = (int32_t)remainder * TRIG_MAX_ANGLE / 10000;
+    s_step_angle = (int32_t)remainder * TRIG_MAX_ANGLE / s_step_target;
     #else
     GRect bounds = layer_get_bounds(window_get_root_layer(s_main_window));
     GRect step_rect = GRect(s_layout.step_layer_offset, s_layout.step_layer_offset,
                             bounds.size.w - 2 * s_layout.step_layer_offset,
                             bounds.size.h - 2 * s_layout.step_layer_offset);
     uint16_t perim = rounded_rect_perimeter(step_rect, (uint16_t)s_layout.tick_outer_rad);
-    uint16_t dist = (uint16_t)((uint32_t)remainder * perim / 10000);
+    uint16_t dist = (uint16_t)((uint32_t)remainder * perim / s_step_target);
     GPoint pt = rounded_rect_perimeter_point(step_rect, (uint16_t)s_layout.tick_outer_rad, perim, dist);
     s_step_angle = trig_angle_from_center(pt, GPoint(bounds.size.w / 2, bounds.size.h / 2));
     #endif
@@ -311,7 +313,7 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
 
   if (s_step_angle > 0) {
     graphics_context_set_fill_color(ctx, foreground_color);
-    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, (uint16_t)s_step_angle);
+    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, s_step_angle);
   }
 }
 #endif // PBL_HEALTH
@@ -600,6 +602,15 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
     settings_save(&s_settings);
     s_tick_persistence_ms = s_settings.tick_persistence_ms;
   }
+  #if defined(PBL_HEALTH)
+  t = dict_find(iter, MESSAGE_KEY_STEP_TARGET);
+  if (t) {
+    s_settings.step_target = (uint16_t)t->value->int32;
+    settings_save(&s_settings);
+    s_step_target = s_settings.step_target;
+    update_steps();
+  }
+  #endif
 }
 
 
@@ -607,6 +618,9 @@ static void prv_inbox_received(DictionaryIterator *iter, void *context) {
 static void init() {
   settings_load(&s_settings);
   s_tick_persistence_ms = s_settings.tick_persistence_ms;
+  #if defined(PBL_HEALTH)
+  s_step_target = s_settings.step_target;
+  #endif
 
   s_main_window = window_create();
   window_set_background_color(s_main_window, GColorBlack);
