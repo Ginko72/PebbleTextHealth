@@ -311,7 +311,7 @@ static void step_update_proc(Layer *layer, GContext *ctx) {
 
   if (s_step_angle > 0) {
     graphics_context_set_fill_color(ctx, foreground_color);
-    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, (uint16_t)s_step_angle);
+    graphics_fill_radial(ctx, radial_rect, GOvalScaleModeFillCircle, 150, 0, s_step_angle);
   }
 }
 #endif // PBL_HEALTH
