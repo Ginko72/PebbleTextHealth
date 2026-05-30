@@ -3,3 +3,7 @@ node_modules/
 .lock-waf_linux_build
 CLAUDE.md
 handoff.md
+.claude_telemetry.json
+/.claude
+.claude_hook_state.json
+docs/HISTORY.md

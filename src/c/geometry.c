@@ -14,6 +14,7 @@ static GPoint corner_arc_point(GPoint center, uint16_t r, int32_t angle) {
 // TRIG_ANGLE delta for distance `d` along a corner arc of radius `r`.
 // d * TRIG_MAX_ANGLE * 113 / (710 * r)  [no overflow for d<=47, r>=4]
 static int32_t arc_angle_delta(uint16_t d, uint16_t r) {
+    if (r == 0) return 0;
     return (int32_t)d * TRIG_MAX_ANGLE * 113 / ((int32_t)710 * r);
 }
 
@@ -21,6 +22,7 @@ static int32_t arc_angle_delta(uint16_t d, uint16_t r) {
 uint16_t rounded_rect_perimeter(GRect rect, uint16_t r) {
     uint16_t w = (uint16_t)rect.size.w;
     uint16_t h = (uint16_t)rect.size.h;
+    if (2 * r >= w || 2 * r >= h) return 0;
     uint16_t straights = 2 * (w - 2 * r) + 2 * (h - 2 * r);
     uint16_t corners   = (uint16_t)((uint32_t)4 * r * 355 / 226);
     return straights + corners;

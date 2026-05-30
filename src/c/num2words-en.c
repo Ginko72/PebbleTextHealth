@@ -131,7 +131,11 @@ void time_to_3words(int hours, int minutes, char *line1, char *line2, char *line
       char *pch = strstr(line2, "teen");
       if (pch) {
         memcpy(line3, pch, 4);
-        pch[0] = 0;
+        if (strcmp(line2, "eighteen") == 0) {
+          line2[5] = 0;  // "eight" + "teen"
+        } else {
+          pch[0] = 0;
+        }
       }
     }
   }

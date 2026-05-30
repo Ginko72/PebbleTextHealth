@@ -599,14 +599,14 @@ static void main_window_unload(Window *window) {
 
 static void prv_inbox_received(DictionaryIterator *iter, void *context) {
   Tuple *t = dict_find(iter, MESSAGE_KEY_TICK_PERSISTENCE);
-  if (t) {
+  if (t && t->value->int32 >= 3 && t->value->int32 <= 60) {
     s_settings.tick_persistence_ms = (uint16_t)(t->value->int32 * 1000);
     settings_save(&s_settings);
     s_tick_persistence_ms = s_settings.tick_persistence_ms;
   }
   #if defined(PBL_HEALTH)
   t = dict_find(iter, MESSAGE_KEY_STEP_TARGET);
-  if (t) {
+  if (t && t->value->int32 >= 1000 && t->value->int32 <= 20000) {
     s_settings.step_target = (uint16_t)t->value->int32;
     settings_save(&s_settings);
     s_step_target = s_settings.step_target;
