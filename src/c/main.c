@@ -66,7 +66,7 @@ static GPoint  s_tick_ends[60];
 
 // Initialize layout configuration based on screen size and shape
 static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
-#if PBL_DISPLAY_WIDTH >= 200
+#if PBL_DISPLAY_WIDTH >= 200  // emery (200×228), gabbro (260×260)
   cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
   cfg->time_height   = 54;
   cfg->time_layer_h  = 60;
@@ -77,8 +77,8 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->date_height   = 22;
   cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
   cfg->batt_height   = 22;
-  cfg->block_y       = bounds.size.h / 2 - 10;
-#elif PBL_DISPLAY_WIDTH >= 180
+  cfg->block_y       = bounds.size.h / 2;
+#elif PBL_DISPLAY_WIDTH >= 180  // chalk (180×180)
   cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
   cfg->time_height   = 46;
   cfg->time_layer_h  = 54;
@@ -90,7 +90,7 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
   cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
   cfg->batt_height   = 22;
   cfg->block_y       = bounds.size.h / 2 - 8;
-#else
+#else  // aplite (144×168), basalt (144×168), diorite (144×168), flint (144×168)
   cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
   cfg->time_height   = 46;
   cfg->time_layer_h  = 54;
