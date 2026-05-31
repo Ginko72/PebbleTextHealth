@@ -24,7 +24,6 @@ static TextLayer *s_date_layer;
 static GFont s_time_font;
 static GFont s_time2_font;
 static GFont s_date_font;
-static GFont s_batt_font;
 
 // Battery
 static TextLayer *s_batt_layer;
@@ -64,70 +63,31 @@ static GPoint  s_tick_ends[60];
 // #undef DEBUG_SECONDS_ALWAYS_ON
 // #define DEBUG_SECONDS_ALWAYS_ON true
 
-// Initialize layout configuration based on screen size and shape
-static void layout_config_init(LayoutConfig *cfg, GRect bounds) {
-#if PBL_DISPLAY_WIDTH >= 200  // emery (200×228), gabbro (260×260)
-  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_46;
-  cfg->time_height   = 54;
-  cfg->time_layer_h  = 60;
-  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
-  cfg->time2_height  = 42;
-  cfg->time2_layer_h = 50;
-  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-  cfg->date_height   = 22;
-  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
-  cfg->batt_height   = 22;
-  cfg->block_y       = bounds.size.h / 2;
-#elif PBL_DISPLAY_WIDTH >= 180  // chalk (180×180)
-  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-  cfg->time_height   = 46;
-  cfg->time_layer_h  = 54;
-  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-  cfg->time2_height  = 26;
-  cfg->time2_layer_h = 34;
-  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-  cfg->date_height   = 22;
-  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-  cfg->batt_height   = 22;
-  cfg->block_y       = bounds.size.h / 2 - 8;
-#else  // aplite (144×168), basalt (144×168), diorite (144×168), flint (144×168)
-  cfg->time_font_id  = RESOURCE_ID_FONT_AMIKO_BOLD_38;
-  cfg->time_height   = 46;
-  cfg->time_layer_h  = 54;
-  cfg->time2_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
-  cfg->time2_height  = 26;
-  cfg->time2_layer_h = 34;
-  cfg->date_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-  cfg->date_height   = 16;
-  cfg->batt_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
-  cfg->batt_height   = 16;
-  cfg->block_y       = bounds.size.h / 2 - 6;
-#endif
-  cfg->block_height      = cfg->time_height + 2 * cfg->time2_height;
-  cfg->corner_inset      = PBL_IF_ROUND_ELSE(bounds.size.w/10, 0);
-  cfg->step_width        = 4;
-  cfg->step_outer_rad    = 30;
-  cfg->tick_width        = 4;
+// Initialize layout geometry: all values derived proportionally from screen dimensions.
+// date_h: measured pixel height of the status font, used to anchor the date layer.
+static void layout_config_init(LayoutConfig *cfg, GRect bounds, int date_h) {
+  int w = bounds.size.w, h = bounds.size.h;
+  cfg->corner_inset      = PBL_IF_ROUND_ELSE(w / 10, 0);
+  cfg->step_width        = w / 36;
+  cfg->step_outer_rad    = w * 5 / 24;
+  cfg->tick_width        = cfg->step_width;
   cfg->step_layer_offset = 0;
   cfg->tick_outer_rad    = cfg->step_outer_rad - cfg->step_width;
   cfg->tick_layer_offset = cfg->step_layer_offset + cfg->step_width;
   cfg->tick_inner_rad    = cfg->tick_outer_rad - cfg->tick_width;
-  cfg->batt_y             = 12 + cfg->corner_inset/6;
-  cfg->bt_gap             = 3;
-  cfg->date_bottom_offset = 14 + cfg->date_height + cfg->corner_inset/2;
-  cfg->date_y             = bounds.size.h - cfg->date_bottom_offset;
+  cfg->batt_y            = h / 14 + cfg->corner_inset / 6;
+  cfg->bt_gap            = w / 48;
+  cfg->date_bottom_offset = h / 12 + date_h + cfg->corner_inset / 2;
+  cfg->date_y            = h - cfg->date_bottom_offset;
+  cfg->block_y           = h / 2;
 
-  // Seconds ring geometry
-  cfg->seconds_tick_length = (uint16_t)(4 + bounds.size.w / 72);  // 4px (144px) → 7px (260px)
+  cfg->seconds_tick_length = (uint16_t)(4 + w / 72);
   #if defined(PBL_ROUND)
-  cfg->seconds_ring_radius = (uint16_t)(bounds.size.w / 2 - cfg->step_layer_offset - cfg->step_width - 2);
+  cfg->seconds_ring_radius = (uint16_t)(w / 2 - cfg->step_layer_offset - cfg->step_width - 2);
   cfg->seconds_ring_rect   = GRectZero;
   #else
-  // Seconds ring sits just inside the step ring's inner edge
   int sri = cfg->step_layer_offset + cfg->step_width + 2;
-  cfg->seconds_ring_rect = GRect(sri, sri,
-                                 bounds.size.w - 2 * sri,
-                                 bounds.size.h - 2 * sri);
+  cfg->seconds_ring_rect   = GRect(sri, sri, w - 2 * sri, h - 2 * sri);
   cfg->seconds_ring_radius = 0;
   #endif
 }
@@ -414,44 +374,80 @@ static void main_window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
   APP_LOG(APP_LOG_LEVEL_INFO, "Main Window Bounds (w,h): (%d,%d)", bounds.size.w, bounds.size.h);
 
-  layout_config_init(&s_layout, bounds);
+  // Select font resource IDs — two tiers based on display width
+#if PBL_DISPLAY_WIDTH >= 200
+  uint32_t time_font_id   = RESOURCE_ID_FONT_AMIKO_BOLD_46;
+  uint32_t time2_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_32;
+  uint32_t status_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_22;
+#else
+  uint32_t time_font_id   = RESOURCE_ID_FONT_AMIKO_BOLD_38;
+  uint32_t time2_font_id  = RESOURCE_ID_FONT_AMIKO_REGULAR_24;
+  uint32_t status_font_id = RESOURCE_ID_FONT_AMIKO_REGULAR_16;
+#endif
 
-  // Load custom fonts
-  s_time_font  = fonts_load_custom_font(resource_get_handle(s_layout.time_font_id));
-  s_time2_font = fonts_load_custom_font(resource_get_handle(s_layout.time2_font_id));
-  s_date_font  = fonts_load_custom_font(resource_get_handle(s_layout.date_font_id));
-  s_batt_font  = fonts_load_custom_font(resource_get_handle(s_layout.batt_font_id));
+  // Load fonts before measuring — date and battery share the same status font
+  s_time_font  = fonts_load_custom_font(resource_get_handle(time_font_id));
+  s_time2_font = fonts_load_custom_font(resource_get_handle(time2_font_id));
+  s_date_font  = fonts_load_custom_font(resource_get_handle(status_font_id));
+
+  // Measure canonical strings to get exact line heights.
+  // Probe width = tw (actual available width) so wrapping is detected if it occurs.
+  // Take the max of the width-maximizing (12:17) and height-maximizing (8:28) strings.
+  int ci = PBL_IF_ROUND_ELSE(bounds.size.w / 10, 0);
+  int tw = bounds.size.w - 2 * ci;
+  GRect probe = GRect(0, 0, tw, 200);
+  int time_h_a  = (int)graphics_text_layout_get_content_size("twelve",    s_time_font,  probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  int time_h_b  = (int)graphics_text_layout_get_content_size("eight",     s_time_font,  probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  int time_h    = time_h_a  > time_h_b  ? time_h_a  : time_h_b;
+  int time2_h_a = (int)graphics_text_layout_get_content_size("seventeen", s_time2_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  int time2_h_b = (int)graphics_text_layout_get_content_size("twenty",    s_time2_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  int time2_h   = time2_h_a > time2_h_b ? time2_h_a : time2_h_b;
+  int date_h    = (int)graphics_text_layout_get_content_size("Wed Sep 30", s_date_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  int batt_h    = (int)graphics_text_layout_get_content_size("100%",       s_date_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
+  // graphics_text_layout_get_content_size returns cap-height only.
+  // Layer heights add a descender margin; spacing uses raw cap-height for tighter lines.
+  // Transparent backgrounds mean layers can safely overlap.
+  int time_layer_h  = time_h  + time_h  * 2 / 5;  // 40% — large font descender room
+  int time2_layer_h = time2_h + time2_h / 5;  // 20% — small font fits with less
+  date_h += date_h / 5;
+  batt_h += batt_h / 5;
+
+  // Compute layout geometry — all values proportional to screen dimensions
+  layout_config_init(&s_layout, bounds, date_h);
 
   // Time block placement
-  int ci      = s_layout.corner_inset;
-  int tw      = bounds.size.w - 2 * ci;
-  int time_y  = s_layout.block_y - s_layout.block_height / 2;
-  int time2_y = time_y  + s_layout.time_height;
-  int time3_y = time2_y + s_layout.time2_height;
+  int block_height = time_layer_h + 2 * time2_h;
+  int time_y  = s_layout.block_y - block_height / 2;
+  int time2_y = time_y  + time_layer_h - time2_h / 4;
+  int time3_y = time2_y + time2_h;
+  int block_shift = time_h / 5 - 3;
+  time_y  -= block_shift;
+  time2_y -= block_shift;
+  time3_y -= block_shift;
 
   // Create the hour (line 1) TextLayer
-  s_time_layer = text_layer_create(GRect(ci, time_y, tw, s_layout.time_layer_h));
+  s_time_layer = text_layer_create(GRect(ci, time_y, tw, time_layer_h));
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_font(s_time_layer, s_time_font);
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
   // Create the minute (line 2) TextLayer
-  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, s_layout.time2_layer_h));
+  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, time2_layer_h));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
   text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
 
   // Create the minute (line 3) TextLayer
-  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, s_layout.time2_layer_h));
+  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, time2_layer_h));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
   text_layer_set_text_alignment(s_time3_layer, GTextAlignmentCenter);
 
   // Create the date TextLayer — just above the bottom status bar
-  s_date_layer = text_layer_create(GRect(ci, s_layout.date_y, tw, s_layout.date_height));
+  s_date_layer = text_layer_create(GRect(ci, s_layout.date_y, tw, date_h));
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
   text_layer_set_font(s_date_layer, s_date_font);
@@ -463,11 +459,11 @@ static void main_window_load(Window *window) {
   int tick_w = bounds.size.w - 2 * s_layout.tick_layer_offset;
   int tick_h = bounds.size.h - 2 * s_layout.tick_layer_offset;
 
-  // Create battery level Layer (hidden on small screens where BT icon takes its place)
-  s_batt_layer = text_layer_create(GRect(ci, s_layout.batt_y, tw, s_layout.batt_height));
+  // Create battery level Layer (hidden when BT icon takes its place)
+  s_batt_layer = text_layer_create(GRect(ci, s_layout.batt_y, tw, batt_h));
   text_layer_set_background_color(s_batt_layer, GColorClear);
   text_layer_set_text_color(s_batt_layer, GColorWhite);
-  text_layer_set_font(s_batt_layer, s_batt_font);
+  text_layer_set_font(s_batt_layer, s_date_font);
   text_layer_set_text_alignment(s_batt_layer, GTextAlignmentCenter);
   // Create the Bluetooth icon GBitmap
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
@@ -575,11 +571,10 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_date_layer);
   text_layer_destroy(s_batt_layer);
 
-  // Unload custom fonts
+  // Unload custom fonts (s_date_font covers battery too — same resource)
   fonts_unload_custom_font(s_time_font);
   fonts_unload_custom_font(s_time2_font);
   fonts_unload_custom_font(s_date_font);
-  fonts_unload_custom_font(s_batt_font);
 
   layer_destroy(s_tick_layer);
   layer_destroy(s_seconds_ring_layer);
