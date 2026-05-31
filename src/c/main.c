@@ -81,7 +81,8 @@ static void layout_config_init(LayoutConfig *cfg, GRect bounds, int date_h) {
   cfg->date_y            = h - cfg->date_bottom_offset;
   cfg->block_y           = h / 2;
 
-  cfg->seconds_tick_length = (uint16_t)(4 + w / 72);
+  cfg->seconds_tick_length = (uint16_t)(4 + w / 72 + (w >= 200 ? 2 : 0));
+  cfg->seconds_tick_stroke = (uint8_t)(w >= 200 ? 3 : 1);
   #if defined(PBL_ROUND)
   cfg->seconds_ring_radius = (uint16_t)(w / 2 - cfg->step_layer_offset - cfg->step_width - 2);
   cfg->seconds_ring_rect   = GRectZero;
@@ -287,6 +288,7 @@ static void seconds_ring_update_proc(Layer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
   int current_second = t->tm_sec;
 
+  graphics_context_set_stroke_width(ctx, s_layout.seconds_tick_stroke);
   for (int i = 0; i < 60; i++) {
     graphics_context_set_stroke_color(ctx,
         (i < current_second) ? GColorWhite : GColorDarkGray);

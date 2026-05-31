@@ -32,6 +32,7 @@ typedef struct {
 
   // Seconds ring geometry
   uint16_t seconds_tick_length;  // radial length of each tick mark (px)
+  uint8_t  seconds_tick_stroke;  // stroke width of each tick mark (px), proportional to screen width
   uint16_t seconds_ring_radius;  // round platforms: outer radius of tick ring
   GRect    seconds_ring_rect;    // rect platforms: tight bounds of tick annular band
 } LayoutConfig;
