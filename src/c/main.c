@@ -404,37 +404,43 @@ static void main_window_load(Window *window) {
   int time2_h   = time2_h_a > time2_h_b ? time2_h_a : time2_h_b;
   int date_h    = (int)graphics_text_layout_get_content_size("Wed Sep 30", s_date_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
   int batt_h    = (int)graphics_text_layout_get_content_size("100%",       s_date_font, probe, GTextOverflowModeWordWrap, GTextAlignmentLeft).h;
-  // graphics_text_layout_get_content_size returns cap-height only; add 20% for descenders.
-  time_h  += time_h  / 5;
-  time2_h += time2_h / 5;
-  date_h  += date_h  / 5;
-  batt_h  += batt_h  / 5;
+  // graphics_text_layout_get_content_size returns cap-height only.
+  // Layer heights add a descender margin; spacing uses raw cap-height for tighter lines.
+  // Transparent backgrounds mean layers can safely overlap.
+  int time_layer_h  = time_h  + time_h  * 2 / 5;  // 40% — large font descender room
+  int time2_layer_h = time2_h + time2_h / 5;  // 20% — small font fits with less
+  date_h += date_h / 5;
+  batt_h += batt_h / 5;
 
   // Compute layout geometry — all values proportional to screen dimensions
   layout_config_init(&s_layout, bounds, date_h);
 
   // Time block placement
-  int block_height = time_h + 2 * time2_h;
+  int block_height = time_layer_h + 2 * time2_h;
   int time_y  = s_layout.block_y - block_height / 2;
-  int time2_y = time_y  + time_h;
+  int time2_y = time_y  + time_layer_h - time2_h / 4;
   int time3_y = time2_y + time2_h;
+  int block_shift = time_h / 5 - 3;
+  time_y  -= block_shift;
+  time2_y -= block_shift;
+  time3_y -= block_shift;
 
   // Create the hour (line 1) TextLayer
-  s_time_layer = text_layer_create(GRect(ci, time_y, tw, time_h));
+  s_time_layer = text_layer_create(GRect(ci, time_y, tw, time_layer_h));
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_font(s_time_layer, s_time_font);
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
 
   // Create the minute (line 2) TextLayer
-  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, time2_h));
+  s_time2_layer = text_layer_create(GRect(ci, time2_y, tw, time2_layer_h));
   text_layer_set_background_color(s_time2_layer, GColorClear);
   text_layer_set_text_color(s_time2_layer, GColorWhite);
   text_layer_set_font(s_time2_layer, s_time2_font);
   text_layer_set_text_alignment(s_time2_layer, GTextAlignmentCenter);
 
   // Create the minute (line 3) TextLayer
-  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, time2_h));
+  s_time3_layer = text_layer_create(GRect(ci, time3_y, tw, time2_layer_h));
   text_layer_set_background_color(s_time3_layer, GColorClear);
   text_layer_set_text_color(s_time3_layer, GColorWhite);
   text_layer_set_font(s_time3_layer, s_time2_font);
